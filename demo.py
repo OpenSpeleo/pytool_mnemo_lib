@@ -4,8 +4,8 @@ from mnemo_lib.reader import read_dmp
 
 if __name__ == "__main__":
     paths = [
-        "tests/test_v5.dmp",
-        "tests/test_v2.dmp"
+        "tests/artifacts/test_v5.dmp",
+        "tests/artifacts/test_v2.dmp"
     ]
 
     for fp in paths:

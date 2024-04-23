@@ -98,11 +98,13 @@ profile = "black"
 [tool.ruff.format]
 indent-style = "space"
 
-[tool.pytest]
+[tool.pytest.ini_options]
 testpaths = [
     "tests/",
 ]
-addopts = "-vvv --cov=src/jaxpp --cov-report=term-missing"
+addopts = "-vvv --cov=mnemo_lib --cov-report=term-missing"
+# addopts = "-vvv --cov=mnemo_lib --cov-report=term-missing --capture=no"
+
 
 [tool.pytest_env]
 RAY_ADDRESS = "local"

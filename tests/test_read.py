@@ -11,21 +11,26 @@ from parameterized import parameterized_class
 @parameterized_class(
     ('filepath'),
     [
-        ("tests/test_v2.dmp",),
-        ("tests/test_v5.dmp",)
+        ("tests/artifacts/test_v2.dmp",),
+        ("tests/artifacts/test_v5.dmp",)
     ]
 )
 class ReadDMPFileTest(unittest.TestCase):
 
-    def test_load(self):
-        dmp_file = Path(self.filepath)
-        read_dmp(dmp_file)
+    def setUp(self):
+        self._file = Path(self.filepath)
+        if not self._file.exists():
+            raise FileNotFoundError(f"File not found: `{self._file}`")
+
+        self._dmp_data = read_dmp(self._file)
 
     def test_export_to_json(self):
-        dmp_file = Path(self.filepath)
-        json_str = read_dmp(dmp_file).to_json()
+        if self._dmp_data is None:
+            raise ValueError("the DMP data has not been read.")
 
-        with open(str(dmp_file)[:-3] + "json", "r") as f:
+        json_str = self._dmp_data.to_json()
+
+        with open(str(self._file)[:-3] + "json", "r") as f:
             json_target = json.load(f)
 
         self.assertEqual(json.loads(json_str), json_target)
