@@ -2,6 +2,9 @@
 requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.distutils.bdist_wheel]
+universal = true
+
 [project]
 name = "mnemo_lib"
 version = "0.0.1"
@@ -76,11 +79,11 @@ test = [
 "Bug Reports" = "https://github.com/MX-SpeleoSurvey/pytool_mnemo_lib/issues"
 "Source" = "https://github.com/MX-SpeleoSurvey/pytool_mnemo_lib"
 
-# The following would provide a command line executable called `sample`
-# which executes the function `main` from this package when invoked.
-# [project.scripts]
-# sample = "sample:main"
+[project.scripts]
+mnemo = "mnemo_lib.commands.main:main"
 
+[project.entry-points."mnemo.actions"]
+convert = "mnemo_lib.commands.convert:convert"
 
 # # This is configuration specific to the `setuptools` build backend.
 # # If you are using a different build backend, you will need to change this.
@@ -88,9 +91,6 @@ test = [
 # # If there are data files included in your packages that need to be
 # # installed, specify them here.
 # package-data = {"sample" = ["*.dat"]}
-
-[tool.distutils.bdist_wheel]
-universal = true
 
 [tool.isort]
 profile = "black"
@@ -103,6 +103,7 @@ testpaths = [
     "tests/",
 ]
 addopts = "-vvv --cov=src/jaxpp --cov-report=term-missing"
+
 [tool.pytest_env]
 RAY_ADDRESS = "local"
 NVIDIA_DISABLE_REQUIRE=1

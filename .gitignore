@@ -163,5 +163,5 @@ cython_debug/
 .pypirc
 
 # Experiment files
-main.py
-out.txt
+/*.txt
+/*.json
