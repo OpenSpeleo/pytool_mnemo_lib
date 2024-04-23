@@ -17,11 +17,13 @@ from parameterized import parameterized_class
 )
 class ReadDMPFileTest(unittest.TestCase):
 
-    def setUp(self):
-        self._file = Path(self.filepath)
-        if not self._file.exists():
-            raise FileNotFoundError(f"File not found: `{self._file}`")
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._file = Path(cls.filepath)
+        if not cls._file.exists():
+            raise FileNotFoundError(f"File not found: `{cls._file}`")
 
+    def setUp(self) -> None:
         self._dmp_data = read_dmp(self._file)
 
     def test_export_to_json(self):

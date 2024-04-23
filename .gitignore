@@ -165,3 +165,4 @@ cython_debug/
 # Experiment files
 /*.txt
 /*.json
+/main.py

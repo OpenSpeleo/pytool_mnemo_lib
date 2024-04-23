@@ -49,17 +49,17 @@ class ConvertCMDTest(CMDUnittest):
             extra=extra
         ).strip()
 
-    def test_convert(self):
+    def test_1_convert(self):
         cmd = self._get_cmd()
         result = subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL)
         self.assertEqual(result.returncode, 0)
 
-    def test_no_overwrite_failure(self):
+    def test_2_no_overwrite_failure(self):
         cmd = self._get_cmd()
         result = subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL)
         self.assertEqual(result.returncode, 1)
 
-    def test_overwrite_success(self):
+    def test_3_overwrite_success(self):
         cmd = self._get_cmd(extra="--overwrite")
         result = subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL)
         self.assertEqual(result.returncode, 0)
