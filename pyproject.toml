@@ -76,8 +76,8 @@ test = [
 
 [project.urls]
 "Homepage" = "https://pypi.org/project/mnemo-lib/"
-"Bug Reports" = "https://github.com/MX-SpeleoSurvey/pytool_mnemo_lib/issues"
-"Source" = "https://github.com/MX-SpeleoSurvey/pytool_mnemo_lib"
+"Bug Reports" = "https://github.com/SpeleoDB/pytool_mnemo_lib/issues"
+"Source" = "https://github.com/SpeleoDB/pytool_mnemo_lib"
 
 [project.scripts]
 mnemo = "mnemo_lib.commands.main:main"
@@ -109,4 +109,3 @@ addopts = "-vvv --cov=mnemo_lib --cov-report=term-missing"
 [tool.pytest_env]
 RAY_ADDRESS = "local"
 NVIDIA_DISABLE_REQUIRE=1
-
