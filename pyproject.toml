@@ -76,8 +76,8 @@ test = [
 
 [project.urls]
 "Homepage" = "https://pypi.org/project/mnemo-lib/"
-"Bug Reports" = "https://github.com/SpeleoDB/pytool_mnemo_lib/issues"
-"Source" = "https://github.com/SpeleoDB/pytool_mnemo_lib"
+"Bug Reports" = "https://github.com/OpenSpeleo/pytool_mnemo_lib/issues"
+"Source" = "https://github.com/OpenSpeleo/pytool_mnemo_lib"
 
 [project.scripts]
 mnemo = "mnemo_lib.commands.main:main"
