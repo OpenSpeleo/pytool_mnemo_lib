@@ -1,16 +1,40 @@
 #!/usr/bin/env python
 
+import json
+from collections import UserList
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
 
+from mnemo_lib.base import MnemoMixin
+from mnemo_lib.encoder import SectionJSONEncoder
 from mnemo_lib.shots import Shot
-from mnemo_lib.types import Direction
-from mnemo_lib.types import ShotType
-from mnemo_lib.types import UnitType
+from mnemo_lib.enums import Direction
+from mnemo_lib.enums import ShotType
+from mnemo_lib.enums import UnitType
 
 
-class Section:
+class SectionList(MnemoMixin, UserList):
+
+    def _to_json(self) -> str:
+        return json.dumps(
+            self.data,
+            cls=SectionJSONEncoder,
+            indent=4,
+            sort_keys=True
+        )
+
+    def _to_dmp(self) -> list[int]:
+        data = [nbr for section in self.data for nbr in section.to_dmp()]
+
+        if int(data[0]) > 2:  # version > 2
+            # adding `MN2OVER` message at the end
+            data += [77, 78, 50, 79, 118, 101, 114]
+
+        return data
+
+
+class Section(MnemoMixin):
 
     def __init__(self, bytearr: list[int]) -> None:
         self._bytearray = bytearr
@@ -137,7 +161,15 @@ class Section:
             "shots": [shot.asdict() for shot in self.shots]
         }
 
-    def to_dmp(self, filepath: str | Path | None = None) -> list[int] | None:
+    def _to_json(self) -> str:
+        return json.dumps(
+            self.asdict(0),
+            cls=SectionJSONEncoder,
+            indent=4,
+            sort_keys=True
+        )
+
+    def _to_dmp(self) -> list[int]:
 
         # =================== DMP HEADER =================== #
         data = [
@@ -162,12 +194,5 @@ class Section:
 
         for shot in self.shots:
             data += shot.to_dmp()
-
-        if filepath is not None:
-            if not isinstance(filepath, Path):
-                filepath = Path(filepath)
-
-            with filepath.open(mode="w") as file:
-                file.write(";".join(data))
 
         return data

@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 
+import json
 import dataclasses
 from pathlib import Path
 
-from mnemo_lib.types import ShotType
+from mnemo_lib.encoder import SectionJSONEncoder
+from mnemo_lib.base import MnemoMixin
+from mnemo_lib.enums import ShotType
 
 
 @dataclasses.dataclass
-class Shot:
+class Shot(MnemoMixin):
     type: ShotType
     head_in: float
     head_out: float
@@ -159,7 +162,16 @@ class Shot:
 
         return f"{self.__class__.__name__}(" + ", ".join([i for i in attrs if i != ""]) + ")"  # noqa: E501
 
-    def to_dmp(self, filepath: str | Path | None = None) -> list[int] | None:
+    def _to_json(self) -> str:
+        return json.dumps(
+            self.asdict(),
+            cls=SectionJSONEncoder,
+            indent=4,
+            sort_keys=True
+        )
+
+    def _to_dmp(self) -> list[int]:
+
         data = []
 
         # Magic Numbers

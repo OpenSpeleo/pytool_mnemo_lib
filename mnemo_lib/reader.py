@@ -1,49 +1,10 @@
 #!/usr/bin/env python
 
-import json
-from collections import UserList
 from collections.abc import Iterator
 from pathlib import Path
 
-from mnemo_lib.encoder import SectionJSONEncoder
 from mnemo_lib.sections import Section
-
-
-class SectionList(UserList):
-    def to_json(self, filepath: str | Path | None = None) -> str:
-        json_str = json.dumps(
-            self.data,
-            cls=SectionJSONEncoder,
-            indent=4,
-            sort_keys=True
-        )
-
-        if filepath is not None:
-
-            if not isinstance(filepath, Path):
-                filepath = Path(filepath)
-
-            with filepath.open(mode="w") as file:
-                file.write(json_str)
-
-        return json_str
-
-    def to_dmp(self, filepath: str | Path | None = None) -> list[int] | None:
-        data = [str(nbr) for section in self.data for nbr in section.to_dmp()]
-
-        if int(data[0]) > 2:  # version > 2
-            # adding `MN2OVER` message at the end
-            data += [str(nbr) for nbr in [77, 78, 50, 79, 118, 101, 114]]
-
-        if filepath is not None:
-            if not isinstance(filepath, Path):
-                filepath = Path(filepath)
-
-            with filepath.open(mode="w") as file:
-                # always finish with a trailing ";"
-                file.write(f"{';'.join(data)};")
-
-        return data
+from mnemo_lib.sections import SectionList
 
 
 def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:
@@ -92,5 +53,3 @@ def read_dmp(filepath: Path | str) -> SectionList[Section]:
         Section(section_dmp)
         for section_dmp in split_dmp_into_sections(data)]
     )
-
-
