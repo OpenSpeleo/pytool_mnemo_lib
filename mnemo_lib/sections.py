@@ -60,8 +60,7 @@ class Section:
 
         return datetime(  # noqa: DTZ001
             year=year,
-            # Months start at 0: January
-            month=self[self._start_offset + 2] + 1,
+            month=self[self._start_offset + 2],
             day=self[self._start_offset + 3],
             hour=self[self._start_offset + 4],
             minute=self[self._start_offset + 5],
@@ -150,7 +149,7 @@ class Section:
 
         data += [
             self.date.year % 100,  # 2023 -> 23
-            self.date.month - 1,  # 0-indexed
+            self.date.month,
             self.date.day,
             self.date.hour,
             self.date.minute,
