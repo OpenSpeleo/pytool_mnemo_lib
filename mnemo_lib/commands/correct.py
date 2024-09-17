@@ -60,6 +60,13 @@ def correct(args: list[str]) -> int:
         )
     )
 
+    parser.add_argument(
+        "--reverse_azimuth",
+        action="store_true",
+        help="Take the reciprocal azimuth to correct a survey IN/OUT into OUT/IN.",
+        default=False,
+    )
+
     parsed_args = parser.parse_args(args)
 
     dmp_file = Path(parsed_args.input_file)
@@ -81,6 +88,10 @@ def correct(args: list[str]) -> int:
             if parsed_args.compass_offset is not None:
                 shot.head_in = (shot.head_in + parsed_args.compass_offset) % 360
                 shot.head_out = (shot.head_out + parsed_args.compass_offset) % 360
+
+            if parsed_args.reverse_azimuth is not None:
+                shot.head_in = (shot.head_in + 180) % 360
+                shot.head_out = (shot.head_out + 180) % 360
 
             if parsed_args.depth_offset is not None:
                 shot.depth_in = round(shot.depth_in + parsed_args.depth_offset, ndigits=2)  # noqa: E501
