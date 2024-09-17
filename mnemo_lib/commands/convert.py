@@ -2,12 +2,11 @@
 
 import argparse
 from pathlib import Path
-from typing import List
 
 from mnemo_lib.reader import read_dmp
 
 
-def convert(args: List[str]) -> int:
+def convert(args: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="mnemo convert")
 
     parser.add_argument(

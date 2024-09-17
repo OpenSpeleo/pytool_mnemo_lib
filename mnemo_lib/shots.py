@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 import dataclasses
-from typing import Optional
+from pathlib import Path
 
 from mnemo_lib.types import ShotType
 
 
 @dataclasses.dataclass
-class Shot(object):
+class Shot:
     type: ShotType
     head_in: float
     head_out: float
@@ -19,18 +19,18 @@ class Shot(object):
     marker_idx: int
 
     # fileVersion >= 4
-    left: Optional[int] = None
-    right: Optional[int] = None
-    up: Optional[int] = None
-    down: Optional[int] = None
+    left: int | None = None
+    right: int | None = None
+    up: int | None = None
+    down: int | None = None
 
     # File Version >= 3
-    temperature: Optional[int] = 0
+    temperature: int | None = 0
 
     # File Version >= 3
-    hours: Optional[int] = 0
-    minutes: Optional[int] = 0
-    seconds: Optional[int] = 0
+    hours: int | None = 0
+    minutes: int | None = 0
+    seconds: int | None = 0
 
     # Magic Values, version >= 5
     shotStartValueA = 57
@@ -48,19 +48,32 @@ class Shot(object):
     def __getitem__(self, idx: int) -> int:
         return self._bytearray[idx]
 
-    def _read_next_item(self):
+    def _readInt8_from_buff(self) -> int:  # noqa: N802
         data = self[self._cursor]
         self._cursor += 1
-        return data
+        return int(data)
 
-    def _read_next_Int16BE(self) -> float:
-        lsb = self._read_next_item()
-        msb = self._read_next_item()
+    def _readInt16BE_from_buff(self) -> float:  # noqa: N802
+        lsb = self._readInt8_from_buff()
+        msb = self._readInt8_from_buff()
 
-        if msb < 0:
-            msb = 2**8 + msb
+        # ---- old method ---- #
+        # if msb < 0:
+        #     msb = 2**8 + msb
+        #
+        # return lsb * 2**8 + msb
+        # -------------------- #
+        return (lsb * 2**8) + (msb & 0xff)
 
-        return lsb * 2 ** 8 + msb
+    def _writeInt16BE(self, value: int) -> tuple[int, int]:  # noqa: N802
+        value = round(value)
+        first = (value >> 8) & 0xff if value >= 0 else value // 255
+
+        # last is in [-128, 128[
+        last = value & 0xff
+        last = last - 2**8 if last >= 128 else last
+
+        return first, last
 
     @property
     def version(self):
@@ -79,38 +92,38 @@ class Shot(object):
         self._cursor = 0
 
         if self.version >=5:
-            self.validate_magic(self._read_next_item(), self.shotStartValueA)
-            self.validate_magic(self._read_next_item(), self.shotStartValueB)
-            self.validate_magic(self._read_next_item(), self.shotStartValueC)
+            self.validate_magic(self._readInt8_from_buff(), self.shotStartValueA)
+            self.validate_magic(self._readInt8_from_buff(), self.shotStartValueB)
+            self.validate_magic(self._readInt8_from_buff(), self.shotStartValueC)
 
-        self.type = ShotType(self._read_next_item())
+        self.type = ShotType(self._readInt8_from_buff())
 
-        self.head_in = self._read_next_Int16BE() / 10.0
-        self.head_out = self._read_next_Int16BE() / 10.0
-        self.length = self._read_next_Int16BE() / 100.0
-        self.depth_in = self._read_next_Int16BE() / 100.0
-        self.depth_out = self._read_next_Int16BE() / 100.0
-        self.pitch_in = self._read_next_Int16BE() / 10.0
-        self.pitch_out = self._read_next_Int16BE() / 10.0
+        self.head_in = self._readInt16BE_from_buff() / 10.0
+        self.head_out = self._readInt16BE_from_buff() / 10.0
+        self.length = self._readInt16BE_from_buff() / 100.0
+        self.depth_in = self._readInt16BE_from_buff() / 100.0
+        self.depth_out = self._readInt16BE_from_buff() / 100.0
+        self.pitch_in = self._readInt16BE_from_buff() / 10.0
+        self.pitch_out = self._readInt16BE_from_buff() / 10.0
 
         if version >= 4:
-            self.left = self._read_next_Int16BE() / 100.0
-            self.right = self._read_next_Int16BE() / 100.0
-            self.up = self._read_next_Int16BE() / 100.0
-            self.down = self._read_next_Int16BE() / 100.0
+            self.left = self._readInt16BE_from_buff() / 100.0
+            self.right = self._readInt16BE_from_buff() / 100.0
+            self.up = self._readInt16BE_from_buff() / 100.0
+            self.down = self._readInt16BE_from_buff() / 100.0
 
         if version >= 3:
-            self.temperature = self._read_next_Int16BE() / 10.0
-            self.hours = int(self._read_next_item())
-            self.minutes = int(self._read_next_item())
-            self.seconds = int(self._read_next_item())
+            self.temperature = self._readInt16BE_from_buff() / 10.0
+            self.hours = int(self._readInt8_from_buff())
+            self.minutes = int(self._readInt8_from_buff())
+            self.seconds = int(self._readInt8_from_buff())
 
-        self.marker_idx = self._read_next_item()
+        self.marker_idx = self._readInt8_from_buff()
 
         if self.version >=5:
-            self.validate_magic(self._read_next_item(), self.shotEndValueA)
-            self.validate_magic(self._read_next_item(), self.shotEndValueB)
-            self.validate_magic(self._read_next_item(), self.shotEndValueC)
+            self.validate_magic(self._readInt8_from_buff(), self.shotEndValueA)
+            self.validate_magic(self._readInt8_from_buff(), self.shotEndValueB)
+            self.validate_magic(self._readInt8_from_buff(), self.shotEndValueC)
 
     def asdict(self):
         return dataclasses.asdict(self)
@@ -144,4 +157,53 @@ class Shot(object):
                 f", seconds: {self.seconds:5.1f}",
             ]
 
-        return f"{self.__class__.__name__}(" + ", ".join([i for i in attrs if i != ""]) + ")"
+        return f"{self.__class__.__name__}(" + ", ".join([i for i in attrs if i != ""]) + ")"  # noqa: E501
+
+    def to_dmp(self, filepath: str | Path | None = None) -> list[int] | None:
+        data = []
+
+        # Magic Numbers
+        if self.version >=5:
+            data += [
+                57,
+                67,
+                77
+            ]
+
+        data += [
+            self.type.value,
+            *self._writeInt16BE(self.head_in * 10.0),
+            *self._writeInt16BE(self.head_out * 10.0),
+            *self._writeInt16BE(self.length * 100.0),
+            *self._writeInt16BE(self.depth_in * 100.0),
+            *self._writeInt16BE(self.depth_out * 100.0),
+            *self._writeInt16BE(self.pitch_in * 10.0),
+            *self._writeInt16BE(self.pitch_out * 10.0),
+        ]
+
+        if self.version >= 4:
+            data += [
+                *self._writeInt16BE(self.left * 100.0),
+                *self._writeInt16BE(self.right * 100.0),
+                *self._writeInt16BE(self.up * 100.0),
+                *self._writeInt16BE(self.down * 100.0),
+            ]
+
+        if self.version >= 3:
+            data += [
+                *self._writeInt16BE(self.temperature * 10.0),
+                self.hours,
+                self.minutes,
+                self.seconds,
+            ]
+
+        data += [self.marker_idx]
+
+        if self.version >=5:
+            data += [
+                95,
+                25,
+                35
+            ]
+
+        return data

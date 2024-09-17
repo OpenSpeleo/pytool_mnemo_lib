@@ -1,22 +1,19 @@
 #!/usr/bin/env python
 
-from typing import List
-from typing import Union
-
 from datetime import datetime
 from functools import cached_property
+from pathlib import Path
 
+from mnemo_lib.shots import Shot
 from mnemo_lib.types import Direction
 from mnemo_lib.types import ShotType
 from mnemo_lib.types import UnitType
 
-from mnemo_lib.shots import Shot
 
+class Section:
 
-class Section(object):
-
-    def __init__(self, bytearray: List[int]) -> None:
-        self._bytearray = bytearray
+    def __init__(self, bytearr: list[int]) -> None:
+        self._bytearray = bytearr
         self._max_buffer_idx = -1
         self._unit_type = UnitType.METRIC
 
@@ -41,7 +38,7 @@ class Section(object):
         # V5 and above start by reading 3 magic number just after the version
         return 0 if self.version < 5 else 3
 
-    def __getitem__(self, index: Union[int, slice]) -> int:
+    def __getitem__(self, index: int | slice) -> int:
         return self._bytearray[index]
 
     @cached_property
@@ -61,14 +58,14 @@ class Section(object):
         if year not in range(2016, 2100):
             raise ValueError(f"Invalid year: `{year}`")
 
-        return datetime(
+        return datetime(  # noqa: DTZ001
             year=year,
             # Months start at 0: January
             month=self[self._start_offset + 2] + 1,
             day=self[self._start_offset + 3],
             hour=self[self._start_offset + 4],
             minute=self[self._start_offset + 5],
-        ).strftime("%Y-%m-%d %H:%M")
+        )
 
     @cached_property
     def name(self) -> str:
@@ -82,24 +79,26 @@ class Section(object):
         buff = self[buff_offset:]
         if buff == [77, 78, 50, 79, 118, 101, 114]:
             # ASCII message not removed by Ariane: "MN2OVER"
-            raise StopIteration()
+            raise StopIteration
 
         return Shot(version=self.version, buff=buff)
 
     @cached_property
-    def shots(self) -> List[Shot]:
+    def shots(self) -> list[Shot]:
         shots = []
 
         buff_offset = 10 + self._start_offset # Initial value
 
-        while True:
+        # `while True` loop equivalent with exit bound
+        # There will never be more than 9999 shots in one section.
+        for _ in range(9999):
             try:
                 shot = self._read_single_shot(buff_offset=buff_offset)
                 buff_offset += shot.buff_len
                 shots.append(shot)
 
                 if shot.type == ShotType.EOC:
-                    raise StopIteration()
+                    break
 
             except StopIteration:
                 break
@@ -138,3 +137,38 @@ class Section(object):
             "direction": self.direction,
             "shots": [shot.asdict() for shot in self.shots]
         }
+
+    def to_dmp(self, filepath: str | Path | None = None) -> list[int] | None:
+
+        # =================== DMP HEADER =================== #
+        data = [
+            self.version
+        ]
+
+        if self.version > 2:  # magic numbers
+            data += [68, 89, 101]
+
+        data += [
+            self.date.year % 100,  # 2023 -> 23
+            self.date.month - 1,  # 0-indexed
+            self.date.day,
+            self.date.hour,
+            self.date.minute,
+            ord(self.name[0]),
+            ord(self.name[1]),
+            ord(self.name[2]),
+            self.direction.value
+        ]
+        # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
+
+        for shot in self.shots:
+            data += shot.to_dmp()
+
+        if filepath is not None:
+            if not isinstance(filepath, Path):
+                filepath = Path(filepath)
+
+            with filepath.open(mode="w") as file:
+                file.write(";".join(data))
+
+        return data

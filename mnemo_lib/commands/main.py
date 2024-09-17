@@ -1,12 +1,13 @@
-# #!/usr/bin/env python3
+#!/usr/bin/env python3
 
 import argparse
 from importlib.metadata import entry_points
 
 import mnemo_lib
 
+
 def main():
-    registered_commands = entry_points(group='mnemo.actions')
+    registered_commands = entry_points(group="mnemo.actions")
 
     parser = argparse.ArgumentParser(prog="mnemo_lib")
     parser.add_argument(

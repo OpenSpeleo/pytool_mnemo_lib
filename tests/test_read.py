@@ -1,15 +1,26 @@
 #!/usr/bin/env python
 
+import hashlib
 import json
 import unittest
-
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from mnemo_lib.reader import read_dmp
 from parameterized import parameterized_class
 
+from mnemo_lib.reader import read_dmp
+
+
+def sha256sum(filepath: str | Path):
+    if not isinstance(filepath, Path):
+        filepath = Path(filepath)
+
+    with filepath.open(mode="rb", buffering=0) as f:
+        return hashlib.file_digest(f, "sha256").hexdigest()
+
+
 @parameterized_class(
-    ('filepath'),
+    ("filepath"),
     [
         ("tests/artifacts/test_v2.dmp",),
         ("tests/artifacts/test_v5.dmp",)
@@ -32,11 +43,17 @@ class ReadDMPFileTest(unittest.TestCase):
 
         json_str = self._dmp_data.to_json()
 
-        with open(str(self._file)[:-3] + "json", "r") as f:
+        with Path(str(self._file)[:-3] + "json").open(mode="r") as f:
             json_target = json.load(f)
 
-        self.assertEqual(json.loads(json_str), json_target)
+        assert json.loads(json_str) == json_target
 
+    def test_round_trip(self):
+        with TemporaryDirectory() as tmp_dir:
+            dmp_fp = Path(tmp_dir) / "output.dmp"
+            self._dmp_data.to_dmp(filepath=dmp_fp)
 
-if __name__ == '__main__':
+            assert sha256sum(dmp_fp) == sha256sum(self._file)
+
+if __name__ == "__main__":
     unittest.main()
