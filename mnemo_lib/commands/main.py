@@ -11,6 +11,7 @@ def main():
 
     parser = argparse.ArgumentParser(prog="mnemo_lib")
     parser.add_argument(
+        "-v",
         "--version",
         action="version",
         version=f"%(prog)s version: {mnemo_lib.__version__}",

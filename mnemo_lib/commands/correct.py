@@ -10,6 +10,7 @@ def correct(args: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="mnemo correct")
 
     parser.add_argument(
+        "-i",
         "--input_file",
         type=str,
         default=None,
@@ -18,6 +19,7 @@ def correct(args: list[str]) -> int:
     )
 
     parser.add_argument(
+        "-o",
         "--output_file",
         type=str,
         default=None,
@@ -26,6 +28,7 @@ def correct(args: list[str]) -> int:
     )
 
     parser.add_argument(
+        "-w",
         "--overwrite",
         action="store_true",
         help="Allow overwrite an already existing file.",
@@ -86,16 +89,22 @@ def correct(args: list[str]) -> int:
                 shot.length = round(shot.length * parsed_args.length_scaling, ndigits=2)
 
             if parsed_args.compass_offset is not None:
-                shot.head_in = (shot.head_in + parsed_args.compass_offset) % 360
-                shot.head_out = (shot.head_out + parsed_args.compass_offset) % 360
-
-            if parsed_args.reverse_azimuth is not None:
-                shot.head_in = (shot.head_in + 180) % 360
-                shot.head_out = (shot.head_out + 180) % 360
+                shot.head_in = round(
+                    (shot.head_in + parsed_args.compass_offset) % 360,
+                    ndigits=0
+                )
+                shot.head_out = round(
+                    (shot.head_out + parsed_args.compass_offset) % 360,
+                    ndigits=0
+                )
 
             if parsed_args.depth_offset is not None:
                 shot.depth_in = round(shot.depth_in + parsed_args.depth_offset, ndigits=2)  # noqa: E501
                 shot.depth_out = round(shot.depth_out + parsed_args.depth_offset, ndigits=2)  # noqa: E501
+
+            if parsed_args.reverse_azimuth:
+                shot.head_in = round((shot.head_in + 180) % 360, ndigits=0)
+                shot.head_out = round((shot.head_out + 180) % 360, ndigits=0)
 
     sections.to_dmp(output_file)
 
