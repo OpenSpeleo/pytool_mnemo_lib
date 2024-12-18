@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 
 from parameterized import parameterized_class
 
-from mnemo_lib.reader import read_dmp
+from mnemo_lib.models import DMPFile
 
 
 def sha256sum(filepath: str | Path):
@@ -23,11 +23,10 @@ def sha256sum(filepath: str | Path):
     ("filepath"),
     [
         ("tests/artifacts/test_v2.dmp",),
-        ("tests/artifacts/test_v5.dmp",)
-    ]
+        ("tests/artifacts/test_v5.dmp",),
+    ],
 )
 class ReadDMPFileTest(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls) -> None:
         cls._file = Path(cls.filepath)
@@ -35,13 +34,13 @@ class ReadDMPFileTest(unittest.TestCase):
             raise FileNotFoundError(f"File not found: `{cls._file}`")
 
     def setUp(self) -> None:
-        self._dmp_data = read_dmp(self._file)
+        self._dmp_data = DMPFile.from_dmp(self._file)
 
     def test_export_to_json(self):
         if self._dmp_data is None:
             raise ValueError("the DMP data has not been read.")
 
-        json_str = self._dmp_data.to_json()
+        json_str = self._dmp_data.model_dump_json()
 
         with Path(str(self._file)[:-3] + "json").open(mode="r") as f:
             json_target = json.load(f)
@@ -54,6 +53,7 @@ class ReadDMPFileTest(unittest.TestCase):
             self._dmp_data.to_dmp(filepath=dmp_fp)
 
             assert sha256sum(dmp_fp) == sha256sum(self._file)
+
 
 if __name__ == "__main__":
     unittest.main()

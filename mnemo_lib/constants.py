@@ -2,6 +2,12 @@
 
 from enum import IntEnum
 
+MNEMO_SUPPORTED_VERSIONS = list(range(2, 6))
+
+
+# `MN2OVER` message in ascii values
+MN2OVER = [77, 78, 50, 79, 118, 101, 114]
+
 
 class Direction(IntEnum):
     In = 0

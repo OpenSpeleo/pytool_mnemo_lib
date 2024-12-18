@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-import subprocess
 import shlex
+import subprocess
 import tempfile
 import unittest
-
 from pathlib import Path
 
 from parameterized import parameterized_class
+
 
 class CMDUnittest(unittest.TestCase):
     command_template = (
@@ -17,11 +17,8 @@ class CMDUnittest(unittest.TestCase):
 
 
 @parameterized_class(
-    ('input_file'),
-    [
-        ("./tests/artifacts/test_v2.dmp",),
-        ("./tests/artifacts/test_v5.dmp",)
-    ]
+    ("input_file"),
+    [("./tests/artifacts/test_v2.dmp",), ("./tests/artifacts/test_v5.dmp",)],
 )
 class ConvertCMDTest(CMDUnittest):
     command_template = (
@@ -40,40 +37,47 @@ class ConvertCMDTest(CMDUnittest):
 
     @classmethod
     def tearDownClass(cls):
-        cls._temp_dir.__exit__(None, None, None)
+        cls._temp_dir_ctx.__exit__(None, None, None)
 
     def _get_cmd(self, extra=""):
         return self.command_template.format(
-            input_f=self._file,
-            output_f=self._temp_dir / "aaa.json",
-            extra=extra
+            input_f=self._file, output_f=self._temp_dir / "aaa.json", extra=extra
         ).strip()
 
     def test_1_convert(self):
         cmd = self._get_cmd()
-        result = subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL)
+        result = subprocess.run(
+            shlex.split(cmd), stdout=subprocess.DEVNULL, check=False
+        )
         self.assertEqual(result.returncode, 0)
 
     def test_2_no_overwrite_failure(self):
         cmd = self._get_cmd()
-        result = subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL)
+        result = subprocess.run(
+            shlex.split(cmd), stdout=subprocess.DEVNULL, check=False
+        )
         self.assertEqual(result.returncode, 1)
 
     def test_3_overwrite_success(self):
         cmd = self._get_cmd(extra="--overwrite")
-        result = subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL)
+        result = subprocess.run(
+            shlex.split(cmd), stdout=subprocess.DEVNULL, check=False
+        )
         self.assertEqual(result.returncode, 0)
 
 
 class ConvertCMDFileNotExistsTest(CMDUnittest):
     def test_convert(self):
         cmd = self.command_template.format(
-            input_f="1223443255",
-            output_f="out.json",
-            extra=""
+            input_f="1223443255", output_f="out.json", extra=""
         )
-        result = subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL)
-        self.assertEqual(result.returncode, 1)
+        result = subprocess.run(
+            shlex.split(cmd),  # noqa: S603
+            stdout=subprocess.DEVNULL,
+            check=False,
+        )
+        assert result.returncode == 1
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

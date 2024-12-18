@@ -3,7 +3,7 @@
 import argparse
 from pathlib import Path
 
-from mnemo_lib.reader import read_dmp
+from mnemo_lib.models import DMPFile
 
 
 def correct(args: list[str]) -> int:
@@ -15,7 +15,7 @@ def correct(args: list[str]) -> int:
         type=str,
         default=None,
         required=True,
-        help="Mnemo DMP Source File."
+        help="Mnemo DMP Source File.",
     )
 
     parser.add_argument(
@@ -24,7 +24,7 @@ def correct(args: list[str]) -> int:
         type=str,
         default=None,
         required=True,
-        help="Path to save the converted file at."
+        help="Path to save the converted file at.",
     )
 
     parser.add_argument(
@@ -40,7 +40,7 @@ def correct(args: list[str]) -> int:
         type=float,
         required=False,
         default=None,
-        help="Apply post-survey recalibration scaling factor to a DMP file."
+        help="Apply post-survey recalibration scaling factor to a DMP file.",
     )
 
     parser.add_argument(
@@ -48,7 +48,7 @@ def correct(args: list[str]) -> int:
         type=float,
         required=False,
         default=None,
-        help="Apply post-survey recalibration compass offset to a DMP file."
+        help="Apply post-survey recalibration compass offset to a DMP file.",
     )
 
     parser.add_argument(
@@ -60,7 +60,7 @@ def correct(args: list[str]) -> int:
             "Apply post-survey depth offset to a DMP file. "
             "`offset > 0` => correcting deeper. "
             "`offset < 0` => correcting shallower."
-        )
+        ),
     )
 
     parser.add_argument(
@@ -78,34 +78,38 @@ def correct(args: list[str]) -> int:
 
     output_file = Path(parsed_args.output_file)
     if output_file.exists() and not parsed_args.overwrite:
-        raise FileExistsError(f"The file {output_file} already existing. "
-                              "Please pass the flag `--overwrite` to ignore.")
+        raise FileExistsError(
+            f"The file {output_file} already existing. "
+            "Please pass the flag `--overwrite` to ignore."
+        )
 
-    sections = read_dmp(dmp_file)
+    dmp_file = DMPFile.from_dmp(filepath=dmp_file)
 
-    for section in sections:
+    for section in dmp_file.sections:
         for shot in section.shots:
             if parsed_args.length_scaling is not None:
                 shot.length = round(shot.length * parsed_args.length_scaling, ndigits=2)
 
             if parsed_args.compass_offset is not None:
                 shot.head_in = round(
-                    (shot.head_in + parsed_args.compass_offset) % 360,
-                    ndigits=0
+                    (shot.head_in + parsed_args.compass_offset) % 360, ndigits=0
                 )
                 shot.head_out = round(
-                    (shot.head_out + parsed_args.compass_offset) % 360,
-                    ndigits=0
+                    (shot.head_out + parsed_args.compass_offset) % 360, ndigits=0
                 )
 
             if parsed_args.depth_offset is not None:
-                shot.depth_in = round(shot.depth_in + parsed_args.depth_offset, ndigits=2)  # noqa: E501
-                shot.depth_out = round(shot.depth_out + parsed_args.depth_offset, ndigits=2)  # noqa: E501
+                shot.depth_in = round(
+                    shot.depth_in + parsed_args.depth_offset, ndigits=2
+                )
+                shot.depth_out = round(
+                    shot.depth_out + parsed_args.depth_offset, ndigits=2
+                )
 
             if parsed_args.reverse_azimuth:
                 shot.head_in = round((shot.head_in + 180) % 360, ndigits=0)
                 shot.head_out = round((shot.head_out + 180) % 360, ndigits=0)
 
-    sections.to_dmp(output_file)
+    dmp_file.to_dmp(output_file)
 
     return 0

@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 
 from collections.abc import Iterator
-from pathlib import Path
-
-from mnemo_lib.sections import Section
-from mnemo_lib.sections import SectionList
 
 
 def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:
-
     dmp_version = data[0]
     assert dmp_version in range(2, 6)  # Between 2 and 5
 
     match dmp_version:
-
         case 2:
             end_seq_pattern = [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         case 5:
@@ -24,11 +18,10 @@ def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:
     start_seq_idx = 0
 
     for current_idx in range(len(data) - len_end_seq + 1):
-        window = data[current_idx:current_idx + len_end_seq]
+        window = data[current_idx : current_idx + len_end_seq]
 
         # new start sequence is found
         if window == end_seq_pattern:
-
             end_of_sequence_idx = current_idx + len_end_seq
 
             # return the found section
@@ -38,18 +31,12 @@ def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:
             start_seq_idx = end_of_sequence_idx
 
 
-def read_dmp(filepath: Path | str) -> SectionList[Section]:
+def convert_to_Int16BE(value: float) -> tuple[int, int]:  # noqa: N802
+    value = round(value)
+    first = (value >> 8) & 0xFF if value >= 0 else value // 255
 
-    if not isinstance(filepath, Path):
-        filepath = Path(filepath)
+    # last is in [-128, 128[
+    last = value & 0xFF
+    last = last - 2**8 if last >= 128 else last
 
-    if not filepath.exists():
-        raise FileNotFoundError
-
-    with filepath.open(mode="r") as file:
-        data = [int(i) for i in file.read().strip().split(";") if i != ""]
-
-    return SectionList([
-        Section(section_dmp)
-        for section_dmp in split_dmp_into_sections(data)]
-    )
+    return first, last

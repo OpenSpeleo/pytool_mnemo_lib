@@ -1,9 +1,10 @@
 # #!/usr/bin/env python3
 
 import argparse
+import json
 from pathlib import Path
 
-from mnemo_lib.reader import read_dmp
+from mnemo_lib.models import DMPFile
 
 
 def convert(args: list[str]) -> int:
@@ -15,7 +16,7 @@ def convert(args: list[str]) -> int:
         type=str,
         default=None,
         required=True,
-        help="Mnemo DMP Source File."
+        help="Mnemo DMP Source File.",
     )
 
     parser.add_argument(
@@ -24,7 +25,7 @@ def convert(args: list[str]) -> int:
         type=str,
         default=None,
         required=True,
-        help="Path to save the converted file at."
+        help="Path to save the converted file at.",
     )
 
     parser.add_argument(
@@ -39,22 +40,32 @@ def convert(args: list[str]) -> int:
         "-f",
         "--format",
         type=str,
-        choices=["json"],
+        choices=["json", "dmp"],
         required=True,
-        help="Conversion format used."
+        help="Conversion format used.",
     )
 
     parsed_args = parser.parse_args(args)
 
-    dmp_file = Path(parsed_args.input_file)
-    if not dmp_file.exists():
-        raise FileNotFoundError(f"Impossible to find: `{dmp_file}`.")
+    input_file = Path(parsed_args.input_file)
+    if not input_file.exists():
+        raise FileNotFoundError(f"Impossible to find: `{input_file}`.")
 
     output_file = Path(parsed_args.output_file)
     if output_file.exists() and not parsed_args.overwrite:
-        raise FileExistsError(f"The file {output_file} already existing. "
-                              "Please pass the flag `--overwrite` to ignore.")
+        raise FileExistsError(
+            f"The file {output_file} already existing. "
+            "Please pass the flag `--overwrite` to ignore."
+        )
 
-    sections = read_dmp(dmp_file)
-    sections.to_json(filepath=output_file)
+    match parsed_args.format:
+        case "json":
+            dmp_file = DMPFile.from_dmp(filepath=input_file)
+            dmp_file.to_json(filepath=output_file)
+        case "dmp":
+            with input_file.open(mode="r") as f:
+                json_target = json.load(f)
+        case _:
+            raise ValueError(f"Unknown value: {parsed_args.format=}")
+
     return 0

@@ -1,15 +1,17 @@
 from pathlib import Path
 
-from mnemo_lib.reader import read_dmp
+from mnemo_lib.models import DMPFile
 
 if __name__ == "__main__":
-    paths = [
-        "tests/artifacts/test_v5.dmp",
-        "tests/artifacts/test_v2.dmp"
-    ]
+    paths = ["tests/artifacts/test_v5.dmp", "tests/artifacts/test_v2.dmp"]
 
     for fp in paths:
         dmp_file = Path(fp)
         print("-------------------------------------------------------")
-        sections = read_dmp(dmp_file)
-        print(sections.to_json(filepath=fp[:-3] + "json"))
+        print(f"{fp=}")
+        dmpfile = DMPFile.from_dmp(filepath=dmp_file)
+        print(dmpfile.to_json(filepath=fp[:-3] + "json"))
+        for section in dmpfile.sections:
+            print(f"{section=}")
+
+        print(f"{DMPFile.from_dmp(fp)=}")

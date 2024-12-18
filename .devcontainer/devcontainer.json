@@ -10,6 +10,22 @@
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/mnemo_toolkit,type=bind",
     "customizations": {
         "vscode": {
+            "settings": {
+                "editor.formatOnSave": true,
+                "[python]": {
+                    "analysis.autoImportCompletions": true,
+                    "analysis.typeCheckingMode": "basic",
+                    "defaultInterpreterPath": "/usr/local/bin/python",
+                    "editor.codeActionsOnSave": {
+                        "source.organizeImports": "always"
+                    },
+                    "editor.defaultFormatter": "charliermarsh.ruff",
+                    "languageServer": "Pylance",
+                    "linting.enabled": true,
+                    "linting.mypyEnabled": true,
+                    "linting.mypyPath": "/usr/local/bin/mypy"
+                }
+            },
             "extensions": [
                 // Python
                 "ms-python.python",
@@ -26,7 +42,9 @@
                 // Makefile Tools
                 "ms-vscode.makefile-tools",
                 // Ruff
-                "charliermarsh.ruff"
+                "charliermarsh.ruff",
+                // PDF
+                "tomoki1207.pdf"
             ]
         }
     },
