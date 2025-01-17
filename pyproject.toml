@@ -97,11 +97,6 @@ testpaths = ["tests/"]
 addopts = "-vvv --cov=mnemo_lib --cov-report=term-missing"
 # addopts = "-vvv --cov=mnemo_lib --cov-report=term-missing --capture=no"
 
-
-[tool.pytest_env]
-RAY_ADDRESS = "local"
-NVIDIA_DISABLE_REQUIRE = 1
-
 [tool.isort]
 profile = "black"
 
@@ -195,30 +190,34 @@ select = [
     "RUF",
 ]
 ignore = [
-    "S101",   # Use of assert detected https://docs.astral.sh/ruff/rules/assert/
-    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
-    "SIM102", # sometimes it's better to nest
-    "UP038",  # Checks for uses of isinstance/issubclass that take a tuple
-    # of types for comparison.
-    # Deactivated because it can make the code slow:
-    # https://github.com/astral-sh/ruff/issues/7871
+    "COM812", # Checks for the absence of trailing commas.
+    "DTZ007", # Checks for uses of datetime.datetime.strptime() that lead to naive 
+    # datetime objects.
     "EM101",  # Checks for the use of string literals in exception constructors.
     "EM102",  # Checks for the use of f-strings in exception constructors.
-    "TRY003", # Checks for long exception messages that are not defined in the
-    # exception class itself.
-    "COM812", # Checks for the absence of trailing commas.
-    "UP009",  # Checks for unnecessary UTF-8 encoding declarations.
+    "ERA001", # Checks for commented-out Python code.
     "EXE001", # Checks for a shebang directive in a file that is not executable.
-    "FBT002", # Checks for the use of boolean positional arguments in function
+    "FBT001", # Checks for the use of boolean positional arguments in function 
+    # definitions, as determined by the presence of a bool type hint.
+    "FBT002", # Checks for the use of boolean positional arguments in function 
     # definitions, as determined by the presence of a boolean default value.
-    "PLR0913", # Checks for function definitions that include too many arguments.
-    "S311",    # Checks for uses of cryptographically weak pseudo-random number generators.
-    "ERA001",  # Checks for commented-out Python code.
+    "N806",    # Checks for the use of non-lowercase variable names in functions.
     "N815",    # Checks for class variable names that follow the mixedCase convention.
-    "FBT001",  # Checks for the use of boolean positional arguments in function definitions,
-    # as determined by the presence of a bool type hint.
-    "PLR2004", # Checks for the use of unnamed numerical constants ("magic") values in comparisons.
-    "PYI024",  # Checks for uses of collections.namedtuple in stub files.
+    "PLR0913", # Checks for function definitions that include too many arguments.
+    "PLR2004", # Checks for the use of unnamed numerical constants ("magic") values in 
+    # comparisons.
+    "PYI024", # Checks for uses of collections.namedtuple in stub files.
+    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
+    "S101",   # Use of assert detected https://docs.astral.sh/ruff/rules/assert/
+    "S311",   # Checks for uses of cryptographically weak pseudo-random number generators.
+    "SIM102", # sometimes it's better to nest
+    "TRY003", # Checks for long exception messages that are not defined in the exception 
+    # class itself.
+    "UP009", # Checks for unnecessary UTF-8 encoding declarations.
+    "UP038", # Checks for uses of isinstance/issubclass that take a tuple of types for 
+    # comparison. 
+    # Deactivated because it can make the code slow: 
+    # https://github.com/astral-sh/ruff/issues/7871
 ]
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
