@@ -64,7 +64,7 @@ def convert(args: list[str]) -> int:
             dmp_file.to_json(filepath=output_file)
         case "dmp":
             with input_file.open(mode="r") as f:
-                json_target = json.load(f)
+                json_target = json.load(f)  # TODO  # noqa: F841
         case _:
             raise ValueError(f"Unknown value: {parsed_args.format=}")
 

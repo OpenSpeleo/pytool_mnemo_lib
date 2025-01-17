@@ -47,23 +47,29 @@ class ConvertCMDTest(CMDUnittest):
     def test_1_convert(self):
         cmd = self._get_cmd()
         result = subprocess.run(
-            shlex.split(cmd), stdout=subprocess.DEVNULL, check=False
+            shlex.split(cmd),  # noqa: S603
+            stdout=subprocess.DEVNULL,
+            check=False,
         )
-        self.assertEqual(result.returncode, 0)
+        assert result.returncode == 0
 
     def test_2_no_overwrite_failure(self):
         cmd = self._get_cmd()
         result = subprocess.run(
-            shlex.split(cmd), stdout=subprocess.DEVNULL, check=False
+            shlex.split(cmd),  # noqa: S603
+            stdout=subprocess.DEVNULL,
+            check=False,
         )
-        self.assertEqual(result.returncode, 1)
+        assert result.returncode == 1
 
     def test_3_overwrite_success(self):
         cmd = self._get_cmd(extra="--overwrite")
         result = subprocess.run(
-            shlex.split(cmd), stdout=subprocess.DEVNULL, check=False
+            shlex.split(cmd),  # noqa: S603
+            stdout=subprocess.DEVNULL,
+            check=False,
         )
-        self.assertEqual(result.returncode, 0)
+        assert result.returncode == 0
 
 
 class ConvertCMDFileNotExistsTest(CMDUnittest):
