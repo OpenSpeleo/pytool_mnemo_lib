@@ -85,6 +85,7 @@ mnemo = "mnemo_lib.commands.main:main"
 [project.entry-points."mnemo.actions"]
 convert = "mnemo_lib.commands.convert:convert"
 correct = "mnemo_lib.commands.correct:correct"
+split = "mnemo_lib.commands.split:split"
 
 # # This is configuration specific to the `setuptools` build backend.
 # # If you are using a different build backend, you will need to change this.
