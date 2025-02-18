@@ -21,7 +21,7 @@ from mnemo_lib.utils import split_dmp_into_sections
 
 class MnemoMixin(metaclass=ABCMeta):
     def to_json(self, filepath: str | Path | None = None) -> str:
-        json_str = self.model_dump_json()
+        json_str = self.model_dump_json(indent=4)
 
         if filepath is not None:
             if not isinstance(filepath, Path):

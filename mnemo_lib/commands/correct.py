@@ -1,9 +1,56 @@
 # #!/usr/bin/env python3
 
 import argparse
+import datetime
+import re
 from pathlib import Path
 
 from mnemo_lib.models import DMPFile
+
+
+def str_to_datetime(value: str) -> datetime.datetime:
+    """Validates that the input date is in YYYY-MM-DD format, a valid date in the
+    past."""
+
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", value):
+        raise argparse.ArgumentTypeError(
+            f"Invalid date format: {value}. Expected format: YYYY-MM-DD"
+        )
+
+    try:
+        date_obj = datetime.datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"Invalid date: {value}. Ensure it's a real calendar date. Expected date "
+            "format: YYYY-MM-DD"
+        ) from None
+
+    if date_obj >= datetime.datetime.now():  # noqa: DTZ005
+        raise argparse.ArgumentTypeError(
+            f"Date must be in the past: {value} is not allowed."
+        )
+
+    return date_obj  # Return validated datetime object
+
+
+def positive_float(value: str | float) -> float:
+    """Check if the float value meets the minimum requirement."""
+    value = float(value)
+    if value > 0:
+        return value
+
+    raise argparse.ArgumentTypeError(f"Value must be positive. You provided: {value}")
+
+
+def compass_heading(value: str | int) -> int:
+    """Check if the float value meets the compass heading requirement."""
+    value = int(value)
+    if 0 <= value < 360:
+        return value
+
+    raise argparse.ArgumentTypeError(
+        f"Value must be within [0, 360[. You provided: {value}"
+    )
 
 
 def correct(args: list[str]) -> int:
@@ -36,8 +83,16 @@ def correct(args: list[str]) -> int:
     )
 
     parser.add_argument(
+        "--date",
+        type=str_to_datetime,
+        required=False,
+        default=None,
+        help="New date to apply in format `YYYY-MM-DD`.",
+    )
+
+    parser.add_argument(
         "--length_scaling",
-        type=float,
+        type=positive_float,
         required=False,
         default=None,
         help="Apply post-survey recalibration scaling factor to a DMP file.",
@@ -45,7 +100,7 @@ def correct(args: list[str]) -> int:
 
     parser.add_argument(
         "--compass_offset",
-        type=float,
+        type=compass_heading,
         required=False,
         default=None,
         help="Apply post-survey recalibration compass offset to a DMP file.",
@@ -86,6 +141,13 @@ def correct(args: list[str]) -> int:
     dmp_file = DMPFile.from_dmp(filepath=dmp_file)
 
     for section in dmp_file.sections:
+        if parsed_args.date is not None:
+            section.date = section.date.replace(
+                year=parsed_args.date.year,
+                month=parsed_args.date.month,
+                day=parsed_args.date.day,
+            )
+
         for shot in section.shots:
             if parsed_args.length_scaling is not None:
                 shot.length = round(shot.length * parsed_args.length_scaling, ndigits=2)

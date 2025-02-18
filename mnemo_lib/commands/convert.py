@@ -40,7 +40,8 @@ def convert(args: list[str]) -> int:
         "-f",
         "--format",
         type=str,
-        choices=["json", "dmp"],
+        # choices=["json", "dmp"],
+        choices=["json"],
         required=True,
         help="Conversion format used.",
     )
@@ -62,10 +63,10 @@ def convert(args: list[str]) -> int:
         case "json":
             dmp_file = DMPFile.from_dmp(filepath=input_file)
             dmp_file.to_json(filepath=output_file)
-        case "dmp":
-            with input_file.open(mode="r") as f:
-                json_target = json.load(f)  # TODO  # noqa: F841
-        case _:
+        # case "dmp":
+        #     with input_file.open(mode="r") as f:
+        #         json_target = json.load(f)  # TODO
+        case _:  # pragma: no cover
             raise ValueError(f"Unknown value: {parsed_args.format=}")
 
     return 0
