@@ -9,11 +9,17 @@ def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:
 
     match dmp_version:
         case 2:
-            end_seq_pattern = [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            end_seq_patterns = [
+                [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ]
         case 5:
-            end_seq_pattern = [57, 67, 77, 3] + [0] * 28 + [95, 25, 35]
+            end_seq_patterns = [
+                [57, 67, 77, 3] + [0] * 28 + [95, 25, 35],  # normal end sequence
+                [57, 67, 77, 3, 7, 8, 7, 8] + [0] * 24 + [95, 25, 35]  # buggy end sequence - sometimes legal
+            ]
 
-    len_end_seq = len(end_seq_pattern)
+    len_end_seq = len(end_seq_patterns[0])
+    assert all(len(seq) == len_end_seq for seq in end_seq_patterns)
 
     start_seq_idx = 0
 
@@ -21,7 +27,7 @@ def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:
         window = data[current_idx : current_idx + len_end_seq]
 
         # new start sequence is found
-        if window == end_seq_pattern:
+        if any(window == end_seq_pattern for end_seq_pattern in end_seq_patterns):
             end_of_sequence_idx = current_idx + len_end_seq
 
             # return the found section

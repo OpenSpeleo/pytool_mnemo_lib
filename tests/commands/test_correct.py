@@ -32,7 +32,11 @@ class CMDTestCase(BaseCMDTestCase):
 
 @parameterized_class(
     ("input_file"),
-    [("./tests/artifacts/test_v2.dmp",), ("./tests/artifacts/test_v5.dmp",)],
+    [
+        ("tests/artifacts/test_v2.dmp",),
+        ("tests/artifacts/test_v5.dmp",),
+        ("tests/artifacts/test_v5_buggy_EOS.dmp",)
+    ]
 )
 class CorrectCMDTest(CMDTestCase):
     def test_convert_file_doesnt_exist(self):

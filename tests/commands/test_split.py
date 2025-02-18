@@ -30,7 +30,7 @@ class CMDTestCase(BaseCMDTestCase):
     ("input_file", "expected_filecount", "expected_hashes"),
     [
         (
-            "./tests/artifacts/test_v2.dmp",
+            "tests/artifacts/test_v2.dmp",
             6,
             [
                 "28d93c55d1c51891e3899a449202fc779a065e4046a14214bccdd98f01b0e793",  # 1
@@ -42,7 +42,7 @@ class CMDTestCase(BaseCMDTestCase):
             ],
         ),
         (
-            "./tests/artifacts/test_v5.dmp",
+            "tests/artifacts/test_v5.dmp",
             9,
             [
                 "3db1b080a567f89254de0b93e2c864f83d1c9d8afeea00edc77ef0b80cfe3a2c",  # 1
@@ -54,6 +54,15 @@ class CMDTestCase(BaseCMDTestCase):
                 "f3331af75252ea2eb3303b25802d80105df0b7967514f75e130ca30cb2a5ba95",  # 7
                 "1d30173a26e8cb0f8d5b3b47145d14b2484fd60d2e097babee149458bbbe3c4f",  # 8
                 "fbf442fc3043a7ba8c8054a21690b0c5268264078f41e3f758ac80a30f7ed1c5",  # 9
+            ],
+        ),
+        (
+            "tests/artifacts/test_v5_buggy_EOS.dmp",
+            3,
+            [
+                "c0e01c8e25360ec802cefc61bcffc23e68855f92c021b74a3d43f4e2f7b58583",  # 1
+                "80082e724a5d372c33feaa1340f772f1c24a3f66231581ac06113793a7f3bba6",  # 2
+                "5be5b249d0ed698cfaebae6ee4aa2360f56c98702ca6e6004d4a81fa4ccdb949",  # 3
             ],
         ),
     ],
