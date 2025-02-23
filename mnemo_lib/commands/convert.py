@@ -1,7 +1,6 @@
 # #!/usr/bin/env python3
 
 import argparse
-import json
 from pathlib import Path
 
 from mnemo_lib.models import DMPFile
