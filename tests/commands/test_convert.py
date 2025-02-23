@@ -24,30 +24,30 @@ class CMDTestCase(BaseCMDTestCase):
     [
         ("tests/artifacts/test_v2.dmp",),
         ("tests/artifacts/test_v5.dmp",),
-        ("tests/artifacts/test_v5_buggy_EOS.dmp",)
-    ]
+        ("tests/artifacts/test_v5_buggy_EOS.dmp",),
+    ],
 )
 class ConvertCMDTest(CMDTestCase):
+    def run_command(self, command: str):
+        return subprocess.run(  # noqa: S603
+            shlex.split(command),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
     def test_convert_succesfull(self):
         cmd = self.get_test_cmd(
             input_f=self._file, output_f=self.outfile, extra="--format=json"
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 0
 
         # with overwrite `-w`
         cmd = self.get_test_cmd(
             input_f=self._file, output_f=self.outfile, extra="--format=json -w"
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 0
 
         # with overwrite `--overwrite`
@@ -56,44 +56,28 @@ class ConvertCMDTest(CMDTestCase):
             output_f=self.outfile,
             extra="--format=json --overwrite",
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 0
 
     def test_no_overwrite_failure(self):
         cmd = self.get_test_cmd(
             input_f=self._file, output_f=self._file, extra="--format=json"
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 1
 
     def test_convert_file_doesnt_exist(self):
         cmd = self.get_test_cmd(
             input_f="1223443255", output_f=self.outfile, extra="--format=json"
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 1
 
     def test_unknown_format_failure(self):
         cmd = self.get_test_cmd(
             input_f=self._file, output_f=self.outfile, extra="--format=bin"
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 2
 
 

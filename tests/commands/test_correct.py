@@ -35,36 +35,32 @@ class CMDTestCase(BaseCMDTestCase):
     [
         ("tests/artifacts/test_v2.dmp",),
         ("tests/artifacts/test_v5.dmp",),
-        ("tests/artifacts/test_v5_buggy_EOS.dmp",)
-    ]
+        ("tests/artifacts/test_v5_buggy_EOS.dmp",),
+    ],
 )
 class CorrectCMDTest(CMDTestCase):
-    def test_convert_file_doesnt_exist(self):
-        cmd = self.get_test_cmd(input_f="1223443255", output_f=self.outfile, extra="")
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
+    def run_command(self, command: str):
+        return subprocess.run(  # noqa: S603
+            shlex.split(command),
+            capture_output=True,
+            text=True,
             check=False,
         )
+
+    def test_convert_file_doesnt_exist(self):
+        cmd = self.get_test_cmd(input_f="1223443255", output_f=self.outfile, extra="")
+        result = self.run_command(cmd)
         assert result.returncode == 1
 
     def test_empty_command_do_nothing(self):
         cmd = self.get_test_cmd(input_f=self._file, output_f=self.outfile, extra="")
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 0
         assert compute_sha256(self._file) == compute_sha256(self.outfile)
 
         # with overwrite `-w`
         cmd = self.get_test_cmd(input_f=self._file, output_f=self.outfile, extra="-w")
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 0
         assert compute_sha256(self._file) == compute_sha256(self.outfile)
 
@@ -74,21 +70,13 @@ class CorrectCMDTest(CMDTestCase):
             output_f=self.outfile,
             extra="--overwrite",
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 0
         assert compute_sha256(self._file) == compute_sha256(self.outfile)
 
     def test_no_overwrite_failure(self):
         cmd = self.get_test_cmd(input_f=self._file, output_f=self._file, extra="")
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 1
 
     @parameterized.expand(
@@ -103,11 +91,7 @@ class CorrectCMDTest(CMDTestCase):
         cmd = self.get_test_cmd(
             input_f=self._file, output_f=self.outfile, extra=f"--date={date_str}"
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == expected_returncode
         if result.returncode == 0:
             assert compute_sha256(self._file) != compute_sha256(self.outfile)
@@ -128,11 +112,7 @@ class CorrectCMDTest(CMDTestCase):
             output_f=self.outfile,
             extra=f"--length_scaling={scaling_factor}",
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == expected_returncode, (
             result.returncode,
             result.stdout,
@@ -148,11 +128,7 @@ class CorrectCMDTest(CMDTestCase):
         cmd = self.get_test_cmd(
             input_f=self._file, output_f=self.outfile, extra="--reverse_azimuth"
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 0
         assert compute_sha256(self._file) != compute_sha256(self.outfile)
 
@@ -172,11 +148,7 @@ class CorrectCMDTest(CMDTestCase):
             output_f=self.outfile,
             extra=f"--compass_offset={compass_offset}",
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == expected_returncode, (
             result.returncode,
             result.stdout,
@@ -202,11 +174,7 @@ class CorrectCMDTest(CMDTestCase):
             output_f=self.outfile,
             extra=f"--depth_offset={depth_offset}",
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == expected_returncode, (
             result.returncode,
             result.stdout,

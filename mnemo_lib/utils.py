@@ -15,7 +15,9 @@ def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:
         case 5:
             end_seq_patterns = [
                 [57, 67, 77, 3] + [0] * 28 + [95, 25, 35],  # normal end sequence
-                [57, 67, 77, 3, 7, 8, 7, 8] + [0] * 24 + [95, 25, 35]  # buggy end sequence - sometimes legal
+                [57, 67, 77, 3, 7, 8, 7, 8]
+                + [0] * 24
+                + [95, 25, 35],  # buggy end sequence - sometimes legal
             ]
 
     len_end_seq = len(end_seq_patterns[0])

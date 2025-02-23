@@ -25,6 +25,14 @@ class CMDTestCase(BaseCMDTestCase):
         "mnemo split --input_file={input_f} --output_directory={output_dir} {extra}"
     )
 
+    def run_command(self, command: str):
+        return subprocess.run(  # noqa: S603
+            shlex.split(command),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
 
 @parameterized_class(
     ("input_file", "expected_filecount", "expected_hashes"),
@@ -72,11 +80,7 @@ class ConvertCMDTest(CMDTestCase):
         cmd = self.get_test_cmd(
             input_f=self._file, output_dir=self._temp_dir, extra=extra
         )
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 0
         assert len(list(self._temp_dir.glob("*.dmp"))) == self.expected_filecount
 
@@ -93,29 +97,17 @@ class ConvertCMDTest(CMDTestCase):
     def test_no_overwrite_failure(self):
         self._execute_successful_split()
         cmd = self.get_test_cmd(input_f=self._file, output_dir=self._temp_dir, extra="")
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 1
 
     def test_slit_file_doesnt_exist(self):
         cmd = self.get_test_cmd(input_f="12234435", output_dir=self._temp_dir, extra="")
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 1
 
     def test_slit_file_into_directory_doesnt_exist(self):
         cmd = self.get_test_cmd(input_f=self._file, output_dir="239259754", extra="")
-        result = subprocess.run(
-            shlex.split(cmd),  # noqa: S603
-            stdout=subprocess.DEVNULL,
-            check=False,
-        )
+        result = self.run_command(cmd)
         assert result.returncode == 1
 
 

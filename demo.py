@@ -2,6 +2,8 @@ from pathlib import Path
 
 from mnemo_lib.models import DMPFile
 
+# flake8: noqa
+
 if __name__ == "__main__":
     paths = ["tests/artifacts/test_v5.dmp", "tests/artifacts/test_v2.dmp"]
 

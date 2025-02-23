@@ -256,7 +256,7 @@ class Section(BaseModel, MnemoMixin):
         return value.strftime("%Y-%m-%d %H:%M")
 
     @classmethod
-    def from_dmp(cls, buffer: list[int]) -> Self:  # noqa: C901
+    def from_dmp(cls, buffer: list[int]) -> Self:  # noqa: C901, PLR0912
         buffer = IntegerBuffer(buffer)
 
         data = {

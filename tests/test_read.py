@@ -24,7 +24,7 @@ def sha256sum(filepath: str | Path):
     [
         ("tests/artifacts/test_v2.dmp",),
         ("tests/artifacts/test_v5.dmp",),
-        ("tests/artifacts/test_v5_buggy_EOS.dmp",)
+        ("tests/artifacts/test_v5_buggy_EOS.dmp",),
     ],
 )
 class ReadDMPFileTest(unittest.TestCase):
