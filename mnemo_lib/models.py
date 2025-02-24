@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import ClassVar
 from typing import Self
 
+import orjson
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import RootModel
@@ -21,7 +22,9 @@ from mnemo_lib.utils import split_dmp_into_sections
 
 class MnemoMixin(metaclass=ABCMeta):
     def to_json(self, filepath: str | Path | None = None) -> str:
-        json_str = self.model_dump_json(indent=4)
+        json_str = orjson.dumps(
+            self.model_dump(), None, option=(orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS)
+        ).decode("utf-8")
 
         if filepath is not None:
             if not isinstance(filepath, Path):
