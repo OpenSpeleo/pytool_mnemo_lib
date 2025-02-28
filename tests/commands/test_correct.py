@@ -12,12 +12,12 @@ from tests.commands.base import BaseCMDTestCase
 
 
 def compute_sha256(file_path: Path) -> str:
-    """Compute the SHA1 checksum of a file."""
-    sha1 = hashlib.sha256()
+    """Compute the SHA256 checksum of a file."""
+    sha256 = hashlib.sha256()
     with file_path.open("rb") as f:
         while chunk := f.read(8192):  # Read in chunks of 8KB
-            sha1.update(chunk)
-    return sha1.hexdigest()
+            sha256.update(chunk)
+    return sha256.hexdigest()
 
 
 class CMDTestCase(BaseCMDTestCase):
