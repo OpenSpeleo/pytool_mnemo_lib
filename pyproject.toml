@@ -3,14 +3,16 @@ requires = ["flit_core >=3.11,<4"]
 build-backend = "flit_core.buildapi"
 
 [tool.uv]
-dev-dependencies = [
+package = true
+
+[dependency-groups]
+dev = [
     "check-manifest",
     "pre-commit>=4.1,<4.4",
     "ruff>=0.3,<0.13",
     "flit>=3.12,<4",
     "wheel>=0.45",
 ]
-package = true
 
 [project]
 name = "mnemo_lib"
