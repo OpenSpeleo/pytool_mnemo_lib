@@ -23,7 +23,10 @@ from mnemo_lib.utils import convert_to_Int16BE
 from mnemo_lib.utils import split_dmp_into_sections
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
+    if sys.version_info >= (3, 11):
+        from typing import Self
+    else:
+        from typing_extensions import Self
 
 
 class MnemoMixin(metaclass=ABCMeta):
@@ -267,7 +270,7 @@ class Section(BaseModel, MnemoMixin):
         return value.strftime("%Y-%m-%d %H:%M")
 
     @classmethod
-    def from_dmp(cls, buffer: list[int]) -> Self:
+    def from_dmp(cls, buffer: list[int]) -> Self:  # noqa: C901, PLR0912
         buffer = IntegerBuffer(buffer)
 
         data = {

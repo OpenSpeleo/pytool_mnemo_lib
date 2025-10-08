@@ -1,14 +1,17 @@
-#!/usr/bin/env python
+from __future__ import annotations
 
 import hashlib
 import shlex
 import subprocess
 import unittest
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from parameterized import parameterized_class
 
 from tests.commands.base import BaseCMDTestCase
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def compute_sha256(file_path: Path) -> str:
