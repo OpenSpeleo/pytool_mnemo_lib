@@ -15,8 +15,11 @@ def sha256sum(filepath: str | Path):
     if not isinstance(filepath, Path):
         filepath = Path(filepath)
 
-    with filepath.open(mode="rb", buffering=0) as f:
-        return hashlib.file_digest(f, "sha256").hexdigest()
+    h = hashlib.sha256()
+    with filepath.open("rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 @parameterized_class(

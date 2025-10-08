@@ -1,6 +1,9 @@
-#!/usr/bin/env python
+from __future__ import annotations
 
-from collections.abc import Iterator
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:

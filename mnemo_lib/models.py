@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import datetime
+import sys
 from abc import ABCMeta
 from abc import abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import ClassVar
-from typing import Self
 
 import orjson
 from pydantic import BaseModel
@@ -18,6 +21,9 @@ from mnemo_lib.constants import ShotType
 from mnemo_lib.intbuffer import IntegerBuffer
 from mnemo_lib.utils import convert_to_Int16BE
 from mnemo_lib.utils import split_dmp_into_sections
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 
 class MnemoMixin(metaclass=ABCMeta):
@@ -243,6 +249,8 @@ class Section(BaseModel, MnemoMixin):
             try:
                 return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M").replace(
                     tzinfo=datetime.UTC
+                    if sys.version_info >= (3, 11)
+                    else datetime.timezone.utc
                 )
             except ValueError as e:
                 raise ValueError(
@@ -259,7 +267,7 @@ class Section(BaseModel, MnemoMixin):
         return value.strftime("%Y-%m-%d %H:%M")
 
     @classmethod
-    def from_dmp(cls, buffer: list[int]) -> Self:  # noqa: C901, PLR0912
+    def from_dmp(cls, buffer: list[int]) -> Self:
         buffer = IntegerBuffer(buffer)
 
         data = {
@@ -340,7 +348,7 @@ class Section(BaseModel, MnemoMixin):
 
         # `while True` loop equivalent with exit bound
         # There will never be more than 9999 shots in one section.
-        for _ in range(9999):
+        for _ in range(int(9e5)):
             try:
                 data["shots"].append(
                     Shot.from_dmp(
@@ -348,8 +356,10 @@ class Section(BaseModel, MnemoMixin):
                         buffer=buffer.read(shot_buff_len),
                     )
                 )
-            except IndexError:
+            except IndexError:  # noqa: PERF203
                 break
+        else:
+            raise RuntimeError("The loop never finished")
 
         return cls(**data)
 

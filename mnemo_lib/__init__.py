@@ -1,5 +1,7 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-import importlib.metadata
+"""
+A library to read MNemo Survey Tool Memory files
+"""
 
-__version__ = importlib.metadata.version("mnemo_lib")
+__version__ = "0.0.4"

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+
 class IntegerBuffer:
-    def __init__(self, buffer: list[int]):
+    def __init__(self, buffer: list[int]) -> None:
         if not isinstance(buffer, list) or any(
             not isinstance(item, int) for item in buffer
         ):
