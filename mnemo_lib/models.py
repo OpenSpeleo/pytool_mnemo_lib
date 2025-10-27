@@ -79,7 +79,7 @@ class Shot(BaseModel, MnemoMixin):
     marker_idx: int
 
     # fileVersion >= 4
-    left: int | None = None
+    left: float | None = None
     right: float | None = None
     up: float | None = None
     down: float | None = None
