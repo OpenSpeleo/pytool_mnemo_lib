@@ -56,15 +56,15 @@ class CMDTestCase(BaseCMDTestCase):
             "tests/artifacts/test_v5.dmp",
             9,
             [
-                "3db1b080a567f89254de0b93e2c864f83d1c9d8afeea00edc77ef0b80cfe3a2c",  # 1
-                "f8596e8ee65e7c1bccd2be99ebfb6eaf629f3b47dddc519994a8311c9751aa09",  # 2
+                "863dc987d827fa5c94f6eb8a5124fbf7e2149dc1c887492d92f1cc7ab80b20cc",  # 1
+                "ebaa28dc38e2feaad3d42bdbe538eef506d9d0965ad16e2f4922333654d31c03",  # 2
                 "4d71545c30255921c1c0fcbe9b7accf78714304016da550377c17988112cbfc8",  # 3
-                "a71d157b397b90b5085da87644151bd638fa48e934b1ecb6bbf7225a7dba8a5b",  # 4
-                "ba155af868df8e30c717881362c72eb0cfd454c0304174f402e67b928765feb5",  # 5
-                "7dfaef9cca88b88af70e8effbff766bd952aa342f51da02cfcd4982170e0de0d",  # 6
-                "f3331af75252ea2eb3303b25802d80105df0b7967514f75e130ca30cb2a5ba95",  # 7
+                "22acd779921354c64356dd078aceeda2329efb48d59371f7d5a6a94fa8d3d665",  # 4
+                "af8b64c8b26be9a565cf7ca622407b05bdfa9db99b96cea47d5541970d6c5c0b",  # 5
+                "2f2939489ab681576a2fd93ede5da95464669f22222935582036ed9222202b33",  # 6
+                "5e74125ddd5a9d78396dba3d6667ee1cfe5f07e939dca86ba34850e35ab3438c",  # 7
                 "1d30173a26e8cb0f8d5b3b47145d14b2484fd60d2e097babee149458bbbe3c4f",  # 8
-                "fbf442fc3043a7ba8c8054a21690b0c5268264078f41e3f758ac80a30f7ed1c5",  # 9
+                "57e8a1f3d645cd76bcfecded5d02e325b21e1311df8973cd66bd56480e573f2b",  # 9
             ],
         ),
         (

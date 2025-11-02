@@ -2,22 +2,24 @@ from __future__ import annotations
 
 import datetime
 import sys
-from abc import ABCMeta
-from abc import abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Annotated
+from typing import Any
 from typing import ClassVar
+from typing import Literal
 
 import orjson
 from pydantic import BaseModel
 from pydantic import ConfigDict
+from pydantic import Field
 from pydantic import RootModel
 from pydantic import field_serializer
 from pydantic import field_validator
 
 from mnemo_lib.constants import MNEMO_SUPPORTED_VERSIONS
-from mnemo_lib.constants import Direction
 from mnemo_lib.constants import ShotType
+from mnemo_lib.constants import SurveyDirection
 from mnemo_lib.intbuffer import IntegerBuffer
 from mnemo_lib.utils import convert_to_Int16BE
 from mnemo_lib.utils import split_dmp_into_sections
@@ -29,68 +31,32 @@ if TYPE_CHECKING:
         from typing_extensions import Self
 
 
-class MnemoMixin(metaclass=ABCMeta):
-    def to_json(self, filepath: str | Path | None = None) -> str:
-        json_str = orjson.dumps(
-            self.model_dump(), None, option=(orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS)
-        ).decode("utf-8")
-
-        if filepath is not None:
-            if not isinstance(filepath, Path):
-                filepath = Path(filepath)
-
-            with filepath.open(mode="w") as file:
-                file.write(json_str)
-
-        return json_str
-
-    def to_dmp(self, filepath: str | Path | None = None) -> list[int]:
-        data = self._to_dmp()
-
-        if filepath is not None:
-            if not isinstance(filepath, Path):
-                filepath = Path(filepath)
-
-            with filepath.open(mode="w") as file:
-                # always finish with a trailing ";"
-                file.write(f"{';'.join([str(nbr) for nbr in data])};")
-
-        return data
-
-    @abstractmethod
-    def _to_dmp(self) -> list[int]:
-        raise NotImplementedError
-
-    @classmethod
-    @abstractmethod
-    def from_dmp(cls, *args, **kwargs) -> Self:
-        raise NotImplementedError
-
-
-class Shot(BaseModel, MnemoMixin):
+class Shot(BaseModel):
     type: ShotType
-    head_in: float
-    head_out: float
-    length: float
-    depth_in: float
-    depth_out: float
-    pitch_in: float
-    pitch_out: float
-    marker_idx: int
+    head_in: Annotated[float, Field(ge=0, lt=360)]
+    head_out: Annotated[float, Field(ge=0, lt=360)]
+    length: Annotated[float, Field(ge=0)]
+    depth_in: Annotated[float, Field(ge=0, le=1000)]
+    depth_out: Annotated[float, Field(ge=0, le=1000)]
+    pitch_in: Annotated[float, Field(ge=-90, le=90)]
+    pitch_out: Annotated[float, Field(ge=-90, le=90)]
+    marker_idx: Annotated[int, Field(ge=0)]
 
     # fileVersion >= 4
-    left: float | None = None
-    right: float | None = None
-    up: float | None = None
-    down: float | None = None
+    # LRUD
+    left: Annotated[float, Field(ge=0)] | None = None
+    right: Annotated[float, Field(ge=0)] | None = None
+    up: Annotated[float, Field(ge=0)] | None = None
+    down: Annotated[float, Field(ge=0)] | None = None
 
     # File Version >= 3
-    temperature: float | None = 0
+    # degrees in celcius
+    temperature: Annotated[float, Field(ge=-50, lt=50)] | None = None
 
     # File Version >= 3
-    hours: int | None = 0
-    minutes: int | None = 0
-    seconds: int | None = 0
+    hours: Annotated[int, Field(ge=0, lt=24)] | None = None
+    minutes: Annotated[int, Field(ge=0, lt=60)] | None = None
+    seconds: Annotated[int, Field(ge=0, lt=60)] | None = None
 
     # Magic Values, version >= 5
     shotStartValueA: ClassVar[int] = 57
@@ -103,17 +69,39 @@ class Shot(BaseModel, MnemoMixin):
 
     model_config = ConfigDict(extra="forbid")
 
+    # field serializer converts the enum to its name when dumping
+    @field_serializer("type", mode="plain")
+    def serialize_type(
+        self, v: ShotType
+    ) -> Literal["CSA", "CSB", "STANDARD", "END_OF_SURVEY"]:
+        return v.name
+
+    @field_validator("type", mode="before")
     @classmethod
-    def from_dmp(cls, version: int, buffer: list[int]) -> Self:
+    def parse_type(cls, v: Any) -> ShotType | Any:
+        if isinstance(v, str):
+            return ShotType[v]
+        return v
+
+    @field_validator("depth_in", "depth_out", "length", mode="before")
+    @classmethod
+    def ensure_positive_or_null_values(cls, v: Any) -> float | None:
+        try:
+            return max(0.0, float(v))
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Expected numeric or empty value, got {v!r}") from e
+
+    @classmethod
+    def from_dmp(cls, version: int, int_buffer: list[int]) -> Self:
         if version not in MNEMO_SUPPORTED_VERSIONS:
             raise ValueError(
                 f"Invalid File Format: Expected DMP version: {MNEMO_SUPPORTED_VERSIONS}"
                 f", got `{version}`."
             )
 
-        buffer = IntegerBuffer(buffer)
+        buffer = IntegerBuffer(int_buffer)  # pyright: ignore[reportAssignmentType]
 
-        data = {
+        data: dict[str, Any] = {
             "depth_in": None,
             "depth_out": None,
             "down": None,
@@ -181,16 +169,16 @@ class Shot(BaseModel, MnemoMixin):
             assert buffer.read() == cls.shotEndValueB
             assert buffer.read() == cls.shotEndValueC
 
-        return cls(**data)
+        return cls.model_validate(data)
 
-    def _to_dmp(self, version: int) -> list[int]:
+    def _generate_dmp(self, version: int) -> list[int]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if version not in MNEMO_SUPPORTED_VERSIONS:
             raise ValueError(
                 f"Invalid File Format: Expected DMP version: {MNEMO_SUPPORTED_VERSIONS}"
                 f", got `{version}`."
             )
 
-        data = []
+        data: list[int] = []
 
         # Magic Numbers
         if version >= 5:
@@ -209,15 +197,17 @@ class Shot(BaseModel, MnemoMixin):
 
         if version >= 4:
             data += [
-                *convert_to_Int16BE(self.left * 100.0),
-                *convert_to_Int16BE(self.right * 100.0),
-                *convert_to_Int16BE(self.up * 100.0),
-                *convert_to_Int16BE(self.down * 100.0),
+                *convert_to_Int16BE((left if (left := self.left) else 0.0) * 100.0),
+                *convert_to_Int16BE((right if (right := self.right) else 0.0) * 100.0),
+                *convert_to_Int16BE((up if (up := self.up) else 0.0) * 100.0),
+                *convert_to_Int16BE((down if (down := self.down) else 0.0) * 100.0),
             ]
 
         if version >= 3:
             data += [
-                *convert_to_Int16BE(self.temperature * 10.0),
+                *convert_to_Int16BE(
+                    (temp if (temp := self.temperature) else 0.0) * 10.0
+                ),
                 self.hours,
                 self.minutes,
                 self.seconds,
@@ -231,12 +221,12 @@ class Shot(BaseModel, MnemoMixin):
         return data
 
 
-class Section(BaseModel, MnemoMixin):
+class Section(BaseModel):
     date: datetime.datetime
-    direction: Direction
-    name: str
-    shots: list[Shot]
-    version: int
+    direction: SurveyDirection
+    name: Annotated[str, Field(min_length=3, max_length=3)]
+    shots: Annotated[list[Shot], Field(min_length=1)]
+    version: Literal[2, 3, 4, 5]
 
     # Magic Values, version >= 2
     sectionStartValueA: ClassVar[int] = 68
@@ -245,23 +235,40 @@ class Section(BaseModel, MnemoMixin):
 
     model_config = ConfigDict(extra="forbid")
 
+    # field serializer converts the enum to its name when dumping
+    @field_serializer("direction", mode="plain")
+    def serialize_type(self, v: SurveyDirection) -> Literal["IN", "OUT"]:
+        return v.name
+
+    @field_validator("direction", mode="before")
+    @classmethod
+    def parse_type(cls, v: Any) -> SurveyDirection | Any:
+        if isinstance(v, str):
+            return SurveyDirection[v]
+        return v
+
     @field_validator("date", mode="before")
     @classmethod
     def validate_datetime(cls, value: str | datetime.datetime) -> datetime.datetime:
-        if isinstance(value, str):
-            try:
-                return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M").replace(
-                    tzinfo=datetime.UTC
-                    if sys.version_info >= (3, 11)
-                    else datetime.timezone.utc
-                )
-            except ValueError as e:
-                raise ValueError(
-                    f"Invalid datetime format: {value}. Expected 'YYYY-MM-DD HH:MM'."
-                ) from e
+        match value:
+            case datetime.datetime():
+                return value
 
-        elif not isinstance(value, datetime.datetime):
-            raise TypeError(f"Unknown data type received: {type(value)=}")
+            case str():
+                try:
+                    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M").replace(
+                        tzinfo=datetime.UTC
+                        if sys.version_info >= (3, 11)
+                        else datetime.timezone.utc
+                    )
+                except ValueError as e:
+                    raise ValueError(
+                        f"Invalid datetime format: {value}. "
+                        "Expected 'YYYY-MM-DD HH:MM'."
+                    ) from e
+
+            case _:
+                raise TypeError(f"Unknown data type received: {type(value)=}")
 
         return value
 
@@ -270,10 +277,10 @@ class Section(BaseModel, MnemoMixin):
         return value.strftime("%Y-%m-%d %H:%M")
 
     @classmethod
-    def from_dmp(cls, buffer: list[int]) -> Self:  # noqa: C901, PLR0912
-        buffer = IntegerBuffer(buffer)
+    def from_dmp(cls, int_buffer: list[int]) -> Self:  # noqa: C901, PLR0912
+        buffer = IntegerBuffer(int_buffer)
 
-        data = {
+        data: dict[str, Any] = {
             "date": None,
             "direction": None,
             "name": None,
@@ -327,12 +334,11 @@ class Section(BaseModel, MnemoMixin):
         )
 
         # =============================== NAME ============================== #
-
         data["name"] = "".join([chr(i) for i in buffer.read(3)])
 
         # ============================ DIRECTION ============================ #
 
-        data["direction"] = Direction(buffer.read())
+        data["direction"] = SurveyDirection(buffer.read())
 
         # ============================== SHOTS ============================== #
         match data["version"]:
@@ -356,7 +362,7 @@ class Section(BaseModel, MnemoMixin):
                 data["shots"].append(
                     Shot.from_dmp(
                         version=data["version"],
-                        buffer=buffer.read(shot_buff_len),
+                        int_buffer=buffer.read(shot_buff_len),
                     )
                 )
             except IndexError:  # noqa: PERF203
@@ -364,9 +370,9 @@ class Section(BaseModel, MnemoMixin):
         else:
             raise RuntimeError("The loop never finished")
 
-        return cls(**data)
+        return cls.model_validate(data)
 
-    def _to_dmp(self) -> list[int]:
+    def _generate_dmp(self) -> list[int]:
         # =================== DMP HEADER =================== #
         data = [self.version]
 
@@ -391,12 +397,28 @@ class Section(BaseModel, MnemoMixin):
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
         for shot in self.shots:
-            data += shot._to_dmp(version=self.version)  # noqa: SLF001
+            data += shot._generate_dmp(version=self.version)  # pyright: ignore[reportPrivateUsage] # noqa: SLF001
 
         return data
 
 
-class DMPFile(RootModel[list[Section]], MnemoMixin):
+class DMPFile(RootModel[list[Section]]):
+    def to_json(self, filepath: str | Path | None = None) -> str:
+        json_str = orjson.dumps(
+            self.model_dump(),
+            None,
+            option=(orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS),
+        ).decode("utf-8")
+
+        if filepath is not None:
+            if not isinstance(filepath, Path):
+                filepath = Path(filepath)
+
+            with filepath.open(mode="w") as file:
+                file.write(json_str)
+
+        return json_str
+
     @classmethod
     def from_dmp(cls, filepath: Path | str) -> Self:
         if not isinstance(filepath, Path):
@@ -414,8 +436,21 @@ class DMPFile(RootModel[list[Section]], MnemoMixin):
 
         return dmpfile
 
-    def _to_dmp(self) -> list[int]:
-        data = [nbr for section in self.root for nbr in section._to_dmp()]  # noqa: SLF001
+    def to_dmp(self, filepath: str | Path | None = None) -> list[int]:
+        data = self._generate_dmp()
+
+        if filepath is not None:
+            if not isinstance(filepath, Path):
+                filepath = Path(filepath)
+
+            with filepath.open(mode="w") as file:
+                # always finish with a trailing ";"
+                file.write(f"{';'.join([str(nbr) for nbr in data])};")
+
+        return data
+
+    def _generate_dmp(self) -> list[int]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        data = [nbr for section in self.root for nbr in section._generate_dmp()]  # pyright: ignore[reportPrivateUsage] # noqa: SLF001
 
         file_version = int(data[0])
 

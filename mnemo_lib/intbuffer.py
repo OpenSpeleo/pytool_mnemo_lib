@@ -1,34 +1,59 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+from typing import overload
+
+if TYPE_CHECKING:
+    from types import NoneType
+
 
 class IntegerBuffer:
     def __init__(self, buffer: list[int]) -> None:
-        if not isinstance(buffer, list) or any(
-            not isinstance(item, int) for item in buffer
+        if not isinstance(buffer, list) or any(  # pyright: ignore[reportUnnecessaryIsInstance]
+            not isinstance(item, int)  # pyright: ignore[reportUnnecessaryIsInstance]
+            for item in buffer
         ):
             raise TypeError("Buffer must be a list of integers.")
 
         self.buffer = tuple(buffer)  # Tuple to guarantee immutability
         self.cursor = 0
 
-    def read(self, items: int = 1) -> int:
+    @overload
+    def read(self) -> int: ...
+
+    @overload
+    def read(self, n_items: NoneType) -> int: ...
+
+    @overload
+    def read(self, n_items: int) -> list[int]: ...
+
+    def read(self, n_items: int | None = None) -> int | list[int]:
         """
         Read `items` integers from the current cursor position and move the cursor.
         """
-        if self.cursor + items > len(self.buffer):
-            raise IndexError("Reading beyond the buffer.")
+        match n_items:
+            case None:
+                self.cursor += 1
+                return self.buffer[self.cursor - 1 : self.cursor][0]
 
-        if items <= 0:
-            raise IndexError("Can not fetch 0 or negative items.")
+            case int():
+                if n_items <= 0:
+                    raise ValueError("Can not fetch 0 or negative items.")
 
-        values = self.buffer[self.cursor : self.cursor + items]
-        self.cursor += items
+                if self.cursor + n_items > len(self.buffer):
+                    raise IndexError("Reading beyond the buffer.")
 
-        return list(values) if items > 1 else values[0]
+                values = self.buffer[self.cursor : self.cursor + n_items]
+                self.cursor += n_items
+
+                return list(values)
+
+            case _:
+                raise TypeError(f"Unknown type received: {type(n_items)} ...")
 
     def readInt16BE(self) -> float:  # noqa: N802
-        lsb = self.read()
-        msb = self.read()
+        lsb: int = self.read()  # pyright: ignore[reportCallIssue]
+        msb: int = self.read()  # pyright: ignore[reportCallIssue]
 
         # ---- old method ---- #
         # if msb < 0:
@@ -38,7 +63,7 @@ class IntegerBuffer:
         # -------------------- #
         return (lsb * 2**8) + (msb & 0xFF)
 
-    def peek(self, items: int = 1) -> int:
+    def peek(self, items: int = 1) -> list[int]:
         """
         Peek `items` integers without moving the cursor.
         """

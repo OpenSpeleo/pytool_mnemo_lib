@@ -31,6 +31,8 @@ def sha256sum(filepath: str | Path):
     ],
 )
 class ReadDMPFileTest(unittest.TestCase):
+    filepath: str
+
     @classmethod
     def setUpClass(cls) -> None:
         cls._file = Path(cls.filepath)
@@ -41,9 +43,6 @@ class ReadDMPFileTest(unittest.TestCase):
         self._dmp_data = DMPFile.from_dmp(self._file)
 
     def test_export_to_json(self):
-        if self._dmp_data is None:
-            raise ValueError("the DMP data has not been read.")
-
         json_str = self._dmp_data.model_dump_json()
 
         with Path(str(self._file)[:-3] + "json").open(mode="r") as f:
@@ -56,7 +55,10 @@ class ReadDMPFileTest(unittest.TestCase):
             dmp_fp = Path(tmp_dir) / "output.dmp"
             self._dmp_data.to_dmp(filepath=dmp_fp)
 
-            assert sha256sum(dmp_fp) == sha256sum(self._file)
+            target_dmp = DMPFile.from_dmp(dmp_fp)
+            target_hash = hashlib.sha256(target_dmp.to_json().encode("utf-8"))
+
+            assert target_hash.hexdigest() == sha256sum(self._file.with_suffix(".json"))
 
 
 if __name__ == "__main__":

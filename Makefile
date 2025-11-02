@@ -1,5 +1,7 @@
 .PHONY: clean test coverage build install lint
 
+SHELL := /bin/bash
+
 # ============================================================================ #
 # CLEAN COMMANDS
 # ============================================================================ #
@@ -44,6 +46,16 @@ test: ## run tests quickly with the default Python
 
 test-all: ## run tests on every Python version with tox
 	tox
+
+regen-test-json:  ## rerun the json conversion to JSON of the test artifacts
+	@shopt -s nocaseglob; \
+	for file in tests/artifacts/*.dmp; do \
+		[ -f "$$file" ] || continue; \
+		out=$${file%.[dD][mM][pP]}.json; \
+		echo "Converting $$file → $$out"; \
+		mnemo convert -i "$$file" -o "$$out" -f json -w; \
+	done; \
+	shopt -u nocaseglob;
 
 coverage: ## check code coverage quickly with the default Python
 	coverage run --source comp_bench_tools -m pytest

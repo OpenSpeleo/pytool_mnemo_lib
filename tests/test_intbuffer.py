@@ -86,7 +86,7 @@ class TestIntegerBuffer(unittest.TestCase):
     def test_invalid_buffer_type(self):
         """Test initializing the buffer with a non-list object raises ValueError."""
         with pytest.raises(TypeError):
-            IntegerBuffer("not a list")
+            IntegerBuffer("not a list")  # pyright: ignore[reportArgumentType]
 
     def test_negative_peek(self):
         """Test peeking with negative items raises IndexError."""
@@ -95,7 +95,7 @@ class TestIntegerBuffer(unittest.TestCase):
 
     def test_negative_read(self):
         """Test reading with negative items raises IndexError."""
-        with pytest.raises(IndexError):
+        with pytest.raises(ValueError, match="Can not fetch 0 or negative items"):
             self.buffer.read(-2)
 
     def test_read_entire_buffer(self):

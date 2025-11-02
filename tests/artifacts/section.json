@@ -1,6 +1,6 @@
 {
     "date": "2024-12-14 15:20",
-    "direction": 1,
+    "direction": "IN",
     "name": "EA1",
     "shots": [
         {
@@ -19,7 +19,7 @@
             "right": 0.0,
             "seconds": 55,
             "temperature": 25.3,
-            "type": 2,
+            "type": "STANDARD",
             "up": 0.0
         },
         {
@@ -38,7 +38,7 @@
             "right": 0.0,
             "seconds": 55,
             "temperature": 25.3,
-            "type": 2,
+            "type": "STANDARD",
             "up": 0.0
         }
     ],

@@ -154,10 +154,10 @@ def correct(args: list[str]) -> int:
 
             if parsed_args.compass_offset is not None:
                 shot.head_in = round(
-                    (shot.head_in + parsed_args.compass_offset) % 360, ndigits=0
+                    (shot.head_in + parsed_args.compass_offset) % 360, ndigits=1
                 )
                 shot.head_out = round(
-                    (shot.head_out + parsed_args.compass_offset) % 360, ndigits=0
+                    (shot.head_out + parsed_args.compass_offset) % 360, ndigits=1
                 )
 
             if parsed_args.depth_offset is not None:

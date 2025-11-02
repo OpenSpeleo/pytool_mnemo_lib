@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import unittest
 from pathlib import Path
+from typing import Any
 
 import jsondiff
 import pytest
@@ -18,11 +19,11 @@ class TestShot(unittest.TestCase):
     Test suite for the Shot Pydantic model.
     """
 
-    def test_valid_shot(self):
+    def test_valid_shot(self) -> None:
         """
         Test creating a valid Shot instance.
         """
-        data = {
+        data: dict[str, Any] = {
             "depth_in": 9.39,
             "depth_out": 11.03,
             "down": 0.0,
@@ -38,15 +39,15 @@ class TestShot(unittest.TestCase):
             "right": 0.0,
             "seconds": 55,
             "temperature": 25.3,
-            "type": 2,
+            "type": "STANDARD",
             "up": 0.0,
         }
-        shot = Shot(**data)
+        shot = Shot.model_validate(data)
 
-        differences = jsondiff.diff(shot.model_dump(), data)
+        differences = jsondiff.diff(shot.model_dump(), data)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
         assert not differences, f"Serialization altered JSON: {differences}"
 
-    def test_invalid_shot_missing_field(self):
+    def test_invalid_shot_missing_field(self) -> None:
         """
         Test Shot model with missing required fields.
         """
@@ -56,14 +57,15 @@ class TestShot(unittest.TestCase):
             # Missing 'down' and other required fields
         }
         with pytest.raises(ValidationError) as excinfo:
-            Shot(**data)
+            Shot.model_validate(data)
+
         assert "Field required" in str(excinfo.value)
 
-    def test_invalid_shot_field_type(self):
+    def test_invalid_shot_field_type(self) -> None:
         """
         Test Shot model with invalid field types.
         """
-        data = {
+        data: dict[str, Any] = {
             "depth_in": "invalid",  # Should be a float
             "depth_out": 12.0,
             "down": 0.5,
@@ -79,19 +81,18 @@ class TestShot(unittest.TestCase):
             "right": 0.8,
             "seconds": 45,
             "temperature": 20.0,
-            "type": 1,
+            "type": "STANDARD",
             "up": 0.4,
         }
-        with pytest.raises(ValidationError) as excinfo:
-            Shot(**data)
-        assert "Input should be a valid number" in str(excinfo.value)
+        with pytest.raises(ValueError, match="Expected numeric or empty value"):
+            Shot.model_validate(data)
 
-    def test_shot_round_trip_json_ShotJsonShot(self):  # noqa: N802
+    def test_shot_round_trip_json_ShotJsonShot(self) -> None:  # noqa: N802
         """
         Test JSON serialization and deserialization for Shot.
         Shot -> JSON -> Shot
         """
-        data = {
+        data: dict[str, Any] = {
             "depth_in": 9.39,
             "depth_out": 11.03,
             "down": 0.0,
@@ -107,10 +108,10 @@ class TestShot(unittest.TestCase):
             "right": 0.0,
             "seconds": 55,
             "temperature": 25.3,
-            "type": 2,
+            "type": "STANDARD",
             "up": 0.0,
         }
-        shot = Shot(**data)
+        shot = Shot.model_validate(data)
         json_data = shot.model_dump_json()
         recreated_shot = Shot.model_validate_json(json_data)
         assert recreated_shot == shot
@@ -128,15 +129,15 @@ class TestShot(unittest.TestCase):
             input_data = json.load(f)
 
         # Parse the JSON data into a Shot model
-        shot = Shot(**input_data)
+        shot = Shot.model_validate(input_data)
 
         # Verify everything went well
-        differences = jsondiff.diff(shot.model_dump(), input_data)
+        differences: dict[Any, Any] = jsondiff.diff(shot.model_dump(), input_data)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         assert not differences, f"Serialization altered JSON: {differences}"
 
         # Serialize the model back to JSON
         output_json = json.loads(shot.model_dump_json())
-        differences = jsondiff.diff(output_json, input_data)
+        differences: dict[Any, Any] = jsondiff.diff(output_json, input_data)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         assert not differences, f"Serialization altered JSON: {differences}"
 
 
@@ -149,9 +150,9 @@ class TestSection(unittest.TestCase):
         """
         Test creating a valid Section instance.
         """
-        data = {
+        data: dict[str, Any] = {
             "date": "2024-12-14 15:20",
-            "direction": 1,
+            "direction": "IN",
             "name": "EA1",
             "shots": [
                 {
@@ -170,15 +171,15 @@ class TestSection(unittest.TestCase):
                     "right": 0.0,
                     "seconds": 55,
                     "temperature": 25.3,
-                    "type": 2,
+                    "type": "STANDARD",
                     "up": 0.0,
                 }
             ],
             "version": 5,
         }
-        model_item = Section(**data)
+        model_item = Section.model_validate(data)
 
-        differences = jsondiff.diff(model_item.model_dump(), data)
+        differences: dict[Any, Any] = jsondiff.diff(model_item.model_dump(), data)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         assert not differences, f"Serialization altered JSON: {differences}"
 
     def test_section_round_trip_SectionJsonSection(self):  # noqa: N802
@@ -187,10 +188,10 @@ class TestSection(unittest.TestCase):
         Section -> JSON -> Section
         """
 
-        data = {
+        data: dict[str, Any] = {
             "date": "2024-12-01 12:03",
-            "direction": 1,
-            "name": "Example Cave",
+            "direction": "IN",
+            "name": "EA1",
             "shots": [
                 {
                     "depth_in": 10.0,
@@ -208,13 +209,13 @@ class TestSection(unittest.TestCase):
                     "right": 0.8,
                     "seconds": 45,
                     "temperature": 20.0,
-                    "type": 1,
+                    "type": "STANDARD",
                     "up": 0.4,
                 }
             ],
-            "version": 1,
+            "version": 2,
         }
-        model_item = Section(**data)
+        model_item = Section.model_validate(data)
         json_data = model_item.model_dump_json()
         recreated_item = Section.model_validate_json(json_data)
         assert recreated_item == model_item
@@ -232,15 +233,15 @@ class TestSection(unittest.TestCase):
             input_data = json.load(f)
 
         # Parse the JSON data into a Shot model
-        shot = Section(**input_data)
+        shot = Section.model_validate(input_data)
 
         # Verify everything went well
-        differences = jsondiff.diff(shot.model_dump(), input_data)
+        differences: dict[Any, Any] = jsondiff.diff(shot.model_dump(), input_data)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         assert not differences, f"Serialization altered JSON: {differences}"
 
         # Serialize the model back to JSON
         output_json = json.loads(shot.model_dump_json())
-        differences = jsondiff.diff(output_json, input_data)
+        differences: dict[Any, Any] = jsondiff.diff(output_json, input_data)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         assert not differences, f"Serialization altered JSON: {differences}"
 
 
@@ -253,10 +254,10 @@ class TestDMPFile(unittest.TestCase):
         """
         Test creating a valid DMPFile instance.
         """
-        survey_data = {
+        survey_data: dict[str, Any] = {
             "date": "2024-12-01 13:03",
-            "direction": 1,
-            "name": "Example Cave",
+            "direction": "IN",
+            "name": "AA1",
             "shots": [
                 {
                     "depth_in": 10.0,
@@ -274,11 +275,11 @@ class TestDMPFile(unittest.TestCase):
                     "right": 0.8,
                     "seconds": 45,
                     "temperature": 20.0,
-                    "type": 1,
+                    "type": "STANDARD",
                     "up": 0.4,
                 }
             ],
-            "version": 1,
+            "version": 2,
         }
 
         data = [survey_data, survey_data, survey_data]
@@ -286,24 +287,19 @@ class TestDMPFile(unittest.TestCase):
         instance = DMPFile.model_validate(data)
 
         # Verify everything went well
-        differences = jsondiff.diff(instance.model_dump(), data)
+        differences: dict[Any, Any] = jsondiff.diff(instance.model_dump(), data)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         assert not differences, f"Serialization altered JSON: {differences}"
-
-        # model_data = {"__root__": [model_item_data]}
-        # model = Model(**model_data)
-        # assert len(model.__root__) == 1
-        # assert model.__root__[0].name == "Example Cave"
 
     def test_dmpfile_round_trip_DMPFileJsonDMPFile(self):  # noqa: N802
         """
         Test JSON round trip: serialization and deserialization for DMPFile.
         DMPfile -> JSON -> DMPfile
         """
-        data = [
+        data: list[dict[str, Any]] = [
             {
                 "date": "2024-12-01 15:34",
-                "direction": 1,
-                "name": "Example Cave",
+                "direction": "IN",
+                "name": "CC2",
                 "shots": [
                     {
                         "depth_in": 10.0,
@@ -321,16 +317,16 @@ class TestDMPFile(unittest.TestCase):
                         "right": 0.8,
                         "seconds": 45,
                         "temperature": 20.0,
-                        "type": 1,
+                        "type": "STANDARD",
                         "up": 0.4,
                     }
                 ],
-                "version": 1,
+                "version": 2,
             },
             {
                 "date": "2024-12-01 06:32",
-                "direction": 1,
-                "name": "Example Cave",
+                "direction": "IN",
+                "name": "AA1",
                 "shots": [
                     {
                         "depth_in": 10.0,
@@ -348,14 +344,14 @@ class TestDMPFile(unittest.TestCase):
                         "right": 0.8,
                         "seconds": 45,
                         "temperature": 20.0,
-                        "type": 1,
+                        "type": "STANDARD",
                         "up": 0.4,
                     }
                 ],
-                "version": 1,
+                "version": 2,
             },
         ]
-        model_item = DMPFile(data)
+        model_item = DMPFile.model_validate(data)
         json_data = model_item.model_dump_json()
         recreated_item = DMPFile.model_validate_json(json_data)
         assert recreated_item == model_item
@@ -376,10 +372,10 @@ class TestDMPFile(unittest.TestCase):
         shot = DMPFile(input_data)
 
         # Verify everything went well
-        differences = jsondiff.diff(shot.model_dump(), input_data)
+        differences: dict[Any, Any] = jsondiff.diff(shot.model_dump(), input_data)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         assert not differences, f"Serialization altered JSON: {differences}"
 
         # Serialize the model back to JSON
         output_json = json.loads(shot.model_dump_json())
-        differences = jsondiff.diff(output_json, input_data)
+        differences: dict[Any, Any] = jsondiff.diff(output_json, input_data)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         assert not differences, f"Serialization altered JSON: {differences}"
