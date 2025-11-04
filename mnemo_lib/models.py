@@ -23,6 +23,7 @@ from mnemo_lib.constants import SurveyDirection
 from mnemo_lib.intbuffer import IntegerBuffer
 from mnemo_lib.utils import convert_to_Int16BE
 from mnemo_lib.utils import split_dmp_into_sections
+from mnemo_lib.utils import try_split_dmp_in_sections
 
 if TYPE_CHECKING:
     if sys.version_info >= (3, 11):
@@ -171,6 +172,30 @@ class Shot(BaseModel):
 
         return cls.model_validate(data)
 
+    @classmethod
+    def get_eos_shot(cls) -> Self:
+        return cls.model_validate(
+            {
+                "depth_in": 0.0,
+                "depth_out": 0.0,
+                "down": None,
+                "head_in": 0.0,
+                "head_out": 0.0,
+                "hours": None,
+                "left": None,
+                "length": 0.0,
+                "marker_idx": 0,
+                "minutes": None,
+                "pitch_in": 0.0,
+                "pitch_out": 0.0,
+                "right": None,
+                "seconds": None,
+                "temperature": None,
+                "type": "END_OF_SURVEY",
+                "up": None,
+            }
+        )
+
     def _generate_dmp(self, version: int) -> list[int]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if version not in MNEMO_SUPPORTED_VERSIONS:
             raise ValueError(
@@ -208,12 +233,12 @@ class Shot(BaseModel):
                 *convert_to_Int16BE(
                     (temp if (temp := self.temperature) else 0.0) * 10.0
                 ),
-                self.hours,
-                self.minutes,
-                self.seconds,
+                hours if (hours := self.hours) else 0,
+                minutes if (minutes := self.minutes) else 0,
+                seconds if (seconds := self.seconds) else 0,
             ]
 
-        data += [self.marker_idx]
+        data += [marker_idx if (marker_idx := self.marker_idx) else 0]
 
         if version >= 5:
             data += [self.shotEndValueA, self.shotEndValueB, self.shotEndValueC]
@@ -277,7 +302,7 @@ class Section(BaseModel):
         return value.strftime("%Y-%m-%d %H:%M")
 
     @classmethod
-    def from_dmp(cls, int_buffer: list[int]) -> Self:  # noqa: C901, PLR0912
+    def from_dmp(cls, int_buffer: list[int], uncorrupt: bool = False) -> Self:  # noqa: C901, PLR0912
         buffer = IntegerBuffer(int_buffer)
 
         data: dict[str, Any] = {
@@ -305,33 +330,38 @@ class Section(BaseModel):
 
         # =============================== DATE ============================== #
 
-        year = buffer.read() + 2000
-        if year not in range(2016, 2100):
-            raise ValueError(f"Invalid year: `{year}`")
+        if uncorrupt:
+            _ = buffer.read(5)  # Skip 5 positions over
+            data["date"] = datetime.datetime.now()  # noqa: DTZ005
 
-        month = buffer.read()
-        if month not in range(1, 13):
-            raise ValueError(f"Invalid month: `{month}`")
+        else:
+            year = buffer.read() + 2000
+            if year not in range(2016, 2100):
+                raise ValueError(f"Invalid year: `{year}`")
 
-        day = buffer.read()
-        if day not in range(1, 31):
-            raise ValueError(f"Invalid day: `{day}`")
+            month = buffer.read()
+            if month not in range(1, 13):
+                raise ValueError(f"Invalid month: `{month}`")
 
-        hour = buffer.read()
-        if hour not in range(24):
-            raise ValueError(f"Invalid hour: `{hour}`")
+            day = buffer.read()
+            if day not in range(1, 31):
+                raise ValueError(f"Invalid day: `{day}`")
 
-        minute = buffer.read()
-        if hour not in range(60):
-            raise ValueError(f"Invalid minute: `{minute}`")
+            hour = buffer.read()
+            if hour not in range(24):
+                raise ValueError(f"Invalid hour: `{hour}`")
 
-        data["date"] = datetime.datetime(  # noqa: DTZ001
-            year=year,
-            month=month,
-            day=day,
-            hour=hour,
-            minute=minute,
-        )
+            minute = buffer.read()
+            if hour not in range(60):
+                raise ValueError(f"Invalid minute: `{minute}`")
+
+            data["date"] = datetime.datetime(  # noqa: DTZ001
+                year=year,
+                month=month,
+                day=day,
+                hour=hour,
+                minute=minute,
+            )
 
         # =============================== NAME ============================== #
         data["name"] = "".join([chr(i) for i in buffer.read(3)])
@@ -420,7 +450,12 @@ class DMPFile(RootModel[list[Section]]):
         return json_str
 
     @classmethod
-    def from_dmp(cls, filepath: Path | str) -> Self:
+    def from_dmp(
+        cls,
+        filepath: Path | str,
+        uncorrupt: bool = False,
+        uncorrupt_date: datetime.date | None = None,
+    ) -> Self:
         if not isinstance(filepath, Path):
             filepath = Path(filepath)
 
@@ -430,11 +465,48 @@ class DMPFile(RootModel[list[Section]]):
         with filepath.open(mode="r") as file:
             data = [int(i) for i in file.read().strip().split(";") if i != ""]
 
-        dmpfile = cls([])
-        for section_dmp in split_dmp_into_sections(data):
-            dmpfile.root.append(Section.from_dmp(section_dmp))
+        return cls.from_dmp_data(
+            data,
+            uncorrupt=uncorrupt,
+            uncorrupt_date=uncorrupt_date,
+        )
 
-        return dmpfile
+    @classmethod
+    def from_dmp_data(
+        cls,
+        dmp_data: list[int],
+        uncorrupt: bool = False,
+        uncorrupt_date: datetime.date | None = None,
+    ) -> Self:
+        sections: list[Section]
+
+        if not uncorrupt:
+            sections: list[Section] = [
+                Section.from_dmp(section_dmp, uncorrupt=False)
+                for section_dmp in split_dmp_into_sections(dmp_data)
+            ]
+        else:
+            if uncorrupt_date is None:
+                raise ValueError(
+                    "`uncorrupt_date` is mandatory for `uncorrupt == True`"
+                )
+            sections: list[Section] = [
+                Section.from_dmp(section_dmp, uncorrupt=True)
+                for section_dmp in try_split_dmp_in_sections(dmp_data)
+            ]
+
+            for section in sections:
+                # Force fixing the date - Might be corrupted
+                section.date = datetime.datetime.combine(
+                    uncorrupt_date,
+                    datetime.datetime.min.time(),
+                )
+
+                # Adding back the final EOS Shot (might not be here)
+                if section.shots[-1].type != ShotType.END_OF_SURVEY:
+                    section.shots.append(Shot.get_eos_shot())
+
+        return cls(sections)
 
     def to_dmp(self, filepath: str | Path | None = None) -> list[int]:
         data = self._generate_dmp()

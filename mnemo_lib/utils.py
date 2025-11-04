@@ -8,8 +8,6 @@ if TYPE_CHECKING:
 
 def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:
     dmp_version = data[0]
-    assert dmp_version in range(2, 6)  # Between 2 and 5
-
     match dmp_version:
         case 2:
             end_seq_patterns = [
@@ -22,6 +20,8 @@ def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:
                 + [0] * 24
                 + [95, 25, 35],  # buggy end sequence - sometimes legal
             ]
+        case _:
+            raise ValueError(f"Unsupported Mnemo Version: {dmp_version}")
 
     len_end_seq = len(end_seq_patterns[0])
     assert all(len(seq) == len_end_seq for seq in end_seq_patterns)
@@ -40,6 +40,29 @@ def split_dmp_into_sections(data: list[int]) -> Iterator[list[int]]:
 
             # move the start index to the nex sequence
             start_seq_idx = end_of_sequence_idx
+
+
+def try_split_dmp_in_sections(data_arr: list[int]) -> Iterator[list[int]]:
+    dmp_version = data_arr[0]
+    match dmp_version:
+        case 2:
+            raise NotImplementedError
+        case 5:
+            pass
+        case _:
+            raise ValueError(f"Unsupported Mnemo Version: {dmp_version}")
+
+    buff: list[int] = []
+    for idx in range(len(data_arr)):
+        if buff and data_arr[idx : idx + 4] == [5, 68, 89, 101]:
+            yield buff
+            # Reset buffer
+            buff = []
+
+        buff.append(data_arr[idx])
+
+    if buff:
+        yield buff
 
 
 def convert_to_Int16BE(value: float) -> tuple[int, int]:  # noqa: N802

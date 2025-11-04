@@ -4,4 +4,4 @@
 A library to read MNemo Survey Tool Memory files
 """
 
-__version__ = "0.0.6"
+__version__ = "0.0.7"
