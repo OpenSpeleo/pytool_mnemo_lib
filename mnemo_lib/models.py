@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Annotated
@@ -26,10 +25,7 @@ from mnemo_lib.utils import split_dmp_into_sections
 from mnemo_lib.utils import try_split_dmp_in_sections
 
 if TYPE_CHECKING:
-    if sys.version_info >= (3, 11):
-        from typing import Self
-    else:
-        from typing_extensions import Self
+    from typing import Self
 
 
 class Shot(BaseModel):
@@ -283,8 +279,6 @@ class Section(BaseModel):
                 try:
                     return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M").replace(
                         tzinfo=datetime.UTC
-                        if sys.version_info >= (3, 11)
-                        else datetime.timezone.utc
                     )
                 except ValueError as e:
                     raise ValueError(
@@ -395,7 +389,7 @@ class Section(BaseModel):
                         int_buffer=buffer.read(shot_buff_len),
                     )
                 )
-            except IndexError:  # noqa: PERF203
+            except IndexError:
                 break
         else:
             raise RuntimeError("The loop never finished")
