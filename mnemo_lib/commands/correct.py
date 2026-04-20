@@ -25,7 +25,8 @@ def str_to_datetime(value: str) -> datetime.datetime:
             "format: YYYY-MM-DD"
         ) from None
 
-    if date_obj >= datetime.datetime.now():  # noqa: DTZ005
+    # Add one day to prevent TZ false negative
+    if date_obj >= datetime.datetime.now() + datetime.timedelta(days=1):  # noqa: DTZ005
         raise argparse.ArgumentTypeError(
             f"Date must be in the past: {value} is not allowed."
         )
