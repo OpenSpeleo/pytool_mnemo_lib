@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import datetime
+import datetime as dt
 import re
 from pathlib import Path
 
 from mnemo_lib.models import DMPFile
 
 
-def str_to_datetime(value: str) -> datetime.datetime:
+def str_to_datetime(value: str) -> dt.datetime:
     """Validates that the input date is in YYYY-MM-DD format, a valid date in the
     past."""
 
@@ -18,7 +18,7 @@ def str_to_datetime(value: str) -> datetime.datetime:
         )
 
     try:
-        date_obj = datetime.datetime.strptime(value, "%Y-%m-%d")
+        date_obj = dt.datetime.strptime(value, "%Y-%m-%d")
     except ValueError:
         raise argparse.ArgumentTypeError(
             f"Invalid date: {value}. Ensure it's a real calendar date. Expected date "
@@ -26,7 +26,7 @@ def str_to_datetime(value: str) -> datetime.datetime:
         ) from None
 
     # Add one day to prevent TZ false negative
-    if date_obj >= datetime.datetime.now() + datetime.timedelta(days=1):  # noqa: DTZ005
+    if date_obj >= dt.datetime.now() + dt.timedelta(days=1):  # noqa: DTZ005
         raise argparse.ArgumentTypeError(
             f"Date must be in the past: {value} is not allowed."
         )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Annotated
@@ -243,7 +243,7 @@ class Shot(BaseModel):
 
 
 class Section(BaseModel):
-    date: datetime.datetime
+    date: dt.datetime
     direction: SurveyDirection
     name: Annotated[str, Field(min_length=3, max_length=3)]
     shots: Annotated[list[Shot], Field(min_length=1)]
@@ -270,15 +270,15 @@ class Section(BaseModel):
 
     @field_validator("date", mode="before")
     @classmethod
-    def validate_datetime(cls, value: str | datetime.datetime) -> datetime.datetime:
+    def validate_datetime(cls, value: str | dt.datetime) -> dt.datetime:
         match value:
-            case datetime.datetime():
+            case dt.datetime():
                 return value
 
             case str():
                 try:
-                    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M").replace(
-                        tzinfo=datetime.UTC
+                    return dt.datetime.strptime(value, "%Y-%m-%d %H:%M").replace(
+                        tzinfo=dt.UTC
                     )
                 except ValueError as e:
                     raise ValueError(
@@ -292,7 +292,7 @@ class Section(BaseModel):
         return value
 
     @field_serializer("date")
-    def serialize_datetime(self, value: datetime.datetime) -> str:
+    def serialize_datetime(self, value: dt.datetime) -> str:
         return value.strftime("%Y-%m-%d %H:%M")
 
     @classmethod
@@ -326,7 +326,7 @@ class Section(BaseModel):
 
         if uncorrupt:
             _ = buffer.read(5)  # Skip 5 positions over
-            data["date"] = datetime.datetime.now()  # noqa: DTZ005
+            data["date"] = dt.datetime.now()  # noqa: DTZ005
 
         else:
             year = buffer.read() + 2000
@@ -349,7 +349,7 @@ class Section(BaseModel):
             if hour not in range(60):
                 raise ValueError(f"Invalid minute: `{minute}`")
 
-            data["date"] = datetime.datetime(  # noqa: DTZ001
+            data["date"] = dt.datetime(  # noqa: DTZ001
                 year=year,
                 month=month,
                 day=day,
@@ -451,7 +451,7 @@ class DMPFile(RootModel[list[Section]]):
         cls,
         filepath: Path | str,
         uncorrupt: bool = False,
-        uncorrupt_date: datetime.date | None = None,
+        uncorrupt_date: dt.date | None = None,
     ) -> Self:
         if not isinstance(filepath, Path):
             filepath = Path(filepath)
@@ -473,7 +473,7 @@ class DMPFile(RootModel[list[Section]]):
         cls,
         dmp_data: list[int],
         uncorrupt: bool = False,
-        uncorrupt_date: datetime.date | None = None,
+        uncorrupt_date: dt.date | None = None,
     ) -> Self:
         sections: list[Section]
 
@@ -494,9 +494,9 @@ class DMPFile(RootModel[list[Section]]):
 
             for section in sections:
                 # Force fixing the date - Might be corrupted
-                section.date = datetime.datetime.combine(
+                section.date = dt.datetime.combine(
                     uncorrupt_date,
-                    datetime.datetime.min.time(),
+                    dt.datetime.min.time(),
                 )
 
                 # Adding back the final EOS Shot (might not be here)
